@@ -1,0 +1,66 @@
+{
+  "name": "visual-qa-inspector",
+  "version": "0.0.1",
+  "description": "Visual QA tool: select any element on a running app, edit it with real design tokens, and copy a precise handoff prompt for an AI agent or dev.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    },
+    "./vite": {
+      "types": "./dist/plugin/vite.d.ts",
+      "default": "./dist/plugin/vite.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "keywords": [
+    "visual-qa",
+    "design-tokens",
+    "devtools",
+    "inspector",
+    "design-review"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^26.0.0",
+    "jsdom": "^29.1.1"
+  }
+}

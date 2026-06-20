@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Element Inspector — Figma-style panel</title>
+<style>
+  /* ===== PROJECT DESIGN TOKENS (auto-detected by the tool) ===== */
+  :root {
+    --color-bg: #0f1117;
+    --color-surface: #1a1d27;
+    --color-surface-2: #232733;
+    --color-text: #e6e8ee;
+    --color-text-muted: #9aa0ad;
+    --color-accent: #6d5efc;
+    --color-accent-2: #8b5cf6;
+    --color-success: #2dd4a7;
+    --color-border: #2c3140;
+
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-5: 24px; --space-6: 32px; --space-8: 48px;
+
+    --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-full: 999px;
+
+    --font-size-sm: 14px; --font-size-base: 16px; --font-size-lg: 20px; --font-size-xl: 32px;
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--color-bg); color: var(--color-text); -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== DEMO APP ===== */
+  .page { max-width: 880px; margin: 0 auto; padding: var(--space-8) var(--space-5); }
+  .hero { text-align: center; padding: var(--space-8) 0; }
+  .hero h1 { font-size: var(--font-size-xl); font-weight: 700; margin: 0 0 var(--space-4); letter-spacing: -0.5px; }
+  .hero p { font-size: var(--font-size-lg); color: var(--color-text-muted); margin: 0 auto var(--space-6); max-width: 520px; line-height: 1.5; }
+  .actions { display: flex; gap: var(--space-3); justify-content: center; }
+  .btn { font-size: var(--font-size-base); font-weight: 500; padding: var(--space-3) var(--space-5); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer; transition: transform 0.15s ease, background-color 0.15s ease; }
+  .btn-primary { background: var(--color-accent); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--color-text); border-color: var(--color-border); }
+  .cards { display: flex; gap: var(--space-4); margin-top: var(--space-8); }
+  .card { flex: 1; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-md); }
+  .card h3 { margin: 0 0 var(--space-2); font-size: var(--font-size-lg); }
+  .card .price { font-size: var(--font-size-xl); font-weight: 700; margin: var(--space-3) 0; }
+  .card .price span { font-size: var(--font-size-sm); color: var(--color-text-muted); font-weight: 400; }
+  .card ul { list-style: none; padding: 0; margin: 0 0 var(--space-5); color: var(--color-text-muted); }
+  .card li { padding: var(--space-2) 0; font-size: var(--font-size-sm); border-bottom: 1px solid var(--color-border); }
+  .badge { display: inline-block; background: var(--color-surface-2); color: var(--color-success); font-size: var(--font-size-sm); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); margin-bottom: var(--space-3); }
+</style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Ship interfaces faster</h1>
+      <p>Review staging builds, tweak any element directly on the page, and hand your dev a precise spec.</p>
+      <div class="actions">
+        <button class="btn btn-primary">Get started</button>
+        <button class="btn btn-ghost">Read docs</button>
+      </div>
+    </section>
+    <section class="cards">
+      <div class="card">
+        <span class="badge">Popular</span>
+        <h3>Pro</h3>
+        <div class="price">$24<span>/mo</span></div>
+        <ul><li>Unlimited projects</li><li>Live element editing</li><li>Token-aware exports</li></ul>
+        <button class="btn btn-primary" style="width:100%">Choose Pro</button>
+      </div>
+      <div class="card">
+        <span class="badge">Team</span>
+        <h3>Business</h3>
+        <div class="price">$49<span>/mo</span></div>
+        <ul><li>Everything in Pro</li><li>Shared review links</li><li>SSO &amp; audit log</li></ul>
+        <button class="btn btn-ghost" style="width:100%">Contact sales</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== FIGMA-STYLE INSPECTOR (would become the npm package) ===== -->
+  <style id="__insp_css">
+    #__insp_panel{position:fixed;top:0;right:0;height:100vh;width:248px;z-index:2147483641;
+      background:#1e1e1e;border-left:1px solid #000;color:#fff;overflow-y:auto;
+      font:11px/1.4 'Inter',-apple-system,system-ui,sans-serif;letter-spacing:.1px;
+      transform:translateX(100%);transition:transform .18s ease;user-select:none}
+    #__insp_panel.open{transform:translateX(0)}
+    #__insp_panel::-webkit-scrollbar{width:8px}#__insp_panel::-webkit-scrollbar-thumb{background:#444;border-radius:4px}
+    .ix-head{display:flex;align-items:center;gap:6px;padding:10px 10px;border-bottom:1px solid #383838;position:sticky;top:0;background:#1e1e1e;z-index:2}
+    .ix-tag{font-weight:600;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ix-tag b{color:#a78bfa}
+    .ix-mod{margin-left:auto;font-size:10px;color:#000;background:#7dd3fc;padding:1px 6px;border-radius:4px;font-weight:600;flex:none}
+    .ix-sel{padding:2px 10px 8px;border-bottom:1px solid #383838;font:10px/1.3 ui-monospace,monospace;color:#6b7280;background:#1e1e1e;word-break:break-all}
+    .ix-sec{padding:10px;border-bottom:1px solid #2e2e2e}
+    .ix-sech{display:flex;align-items:center;height:20px;margin-bottom:8px}
+    .ix-sech .t{font-size:11px;font-weight:600;color:#fff}
+    .ix-sech .acts{margin-left:auto;display:flex;gap:2px;color:#8a8a8a}
+    .ix-ico{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;cursor:pointer;color:#b3b3b3}
+    .ix-ico:hover{background:#383838;color:#fff}
+    .ix-lbl{color:#8a8a8a;font-size:11px;margin:8px 0 5px}
+    .ix-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:5px 0}
+    .ix-row.one{grid-template-columns:1fr}
+    .fld{display:flex;align-items:center;gap:5px;height:28px;padding:0 7px;border-radius:5px;border:1px solid transparent;background:#2c2c2c;min-width:0;cursor:text}
+    .fld:hover{border-color:#4a4a4a}
+    .fld:focus-within{border-color:#0d99ff;background:#1e1e1e}
+    .fld .gl{color:#8a8a8a;font-size:11px;flex:none;width:12px;text-align:center;font-weight:500}
+    .fld input{all:unset;flex:1;min-width:0;color:#fff;font:11px/1 inherit;font-family:inherit}
+    .fld .suf{color:#8a8a8a;font-size:10px;flex:none;cursor:pointer}
+    .fld svg{flex:none}
+    .seg{display:flex;background:#2c2c2c;border-radius:6px;padding:2px;gap:2px}
+    .seg button{flex:1;height:26px;display:flex;align-items:center;justify-content:center;background:none;border:none;border-radius:4px;color:#b3b3b3;cursor:pointer}
+    .seg button:hover{background:#383838;color:#fff}
+    .seg button.on{background:#0d99ff;color:#fff}
+    .grid9{width:54px;height:54px;background:#2c2c2c;border-radius:6px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);flex:none}
+    .grid9 i{display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .grid9 i::before{content:"";width:4px;height:4px;border-radius:1px;background:#5a5a5a}
+    .grid9 i:hover::before{background:#fff}
+    .grid9 i.on::before{width:10px;height:3px;background:#0d99ff}
+    .alirow{display:flex;gap:8px;align-items:flex-start}
+    .alirow .col{flex:1;min-width:0}
+    .swatch{width:16px;height:16px;border-radius:3px;border:1px solid rgba(255,255,255,.15);flex:none}
+    .fill{display:flex;align-items:center;gap:7px;height:28px;padding:0 7px;border-radius:5px;background:#2c2c2c;border:1px solid transparent}
+    .fill:hover{border-color:#4a4a4a}
+    .fill .nm{flex:1;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fill input[type=color]{position:absolute;opacity:0;width:16px;height:16px;cursor:pointer}
+    .fill .sw-wrap{position:relative;width:16px;height:16px;flex:none}
+    .ix-chk{display:flex;align-items:center;gap:7px;margin:8px 0 2px;color:#d4d4d4;cursor:pointer}
+    .ix-chk input{accent-color:#0d99ff}
+    .ix-foot{position:sticky;bottom:0;background:#1e1e1e;border-top:1px solid #383838;padding:10px;display:flex;gap:6px}
+    .ix-foot .cp{flex:1;height:30px;background:#0d99ff;color:#fff;border:none;border-radius:6px;font:600 11px inherit;cursor:pointer}
+    .ix-foot .rs{height:30px;background:#2c2c2c;color:#d4d4d4;border:none;border-radius:6px;padding:0 12px;cursor:pointer}
+    .ix-foot .cp:hover{background:#3b9bff}.ix-foot .rs:hover{background:#383838}
+    select.bare{all:unset;color:#fff;font:11px inherit;cursor:pointer}
+    #__insp_launch{position:fixed;bottom:20px;right:20px;z-index:2147483642;cursor:pointer;background:#0d99ff;color:#fff;border:none;border-radius:6px;padding:9px 16px;font:600 12px system-ui;box-shadow:0 6px 20px rgba(13,153,255,.45);display:flex;align-items:center;gap:7px}
+    #__insp_overlay{position:fixed;pointer-events:none;z-index:2147483640;outline:1.5px solid #0d99ff;background:rgba(13,153,255,.08);display:none}
+    #__insp_overlay .tip{position:absolute;top:-19px;left:0;background:#0d99ff;color:#fff;font:600 10px system-ui;padding:1px 6px;border-radius:3px;white-space:nowrap}
+  </style>
+  <script>
+  (function () {
+    "use strict";
+
+    /* ---------- TOKENS ---------- */
+    function collectTokens(){const t={};for(const s of document.styleSheets){let r;try{r=s.cssRules}catch(e){continue}if(!r)continue;for(const rule of r){if(!rule.style||!rule.selectorText)continue;if(!/:root|html|^\*$/.test(rule.selectorText))continue;for(let i=0;i<rule.style.length;i++){const p=rule.style[i];if(p.startsWith("--"))t[p]=rule.style.getPropertyValue(p).trim()}}}return t}
+    const TOKENS=collectTokens();
+    const rootCS=getComputedStyle(document.documentElement);
+    const resolve=n=>rootCS.getPropertyValue(n).trim();
+    function normColor(v){const d=document.createElement("div");d.style.color=v;document.body.appendChild(d);const c=getComputedStyle(d).color;d.remove();return c}
+    const colorTokens={},spaceTokens={},radiusTokens={},sizeTokens={};
+    for(const name in TOKENS){const v=resolve(name);
+      if(name.includes("color"))colorTokens[normColor(v)]=name;
+      else if(name.includes("space"))spaceTokens[v]=name;
+      else if(name.includes("radius"))radiusTokens[v]=name;
+      else if(name.includes("size"))sizeTokens[v]=name;}
+    const tokColor=v=>colorTokens[normColor(v)]||null;
+    const tokVal=(v,m)=>m[(""+v).trim()]||null;
+    const prettyTok=n=>n.replace(/^--/,"").replace(/^color-/,"");
+
+    /* ---------- STATE ---------- */
+    let selected=null,pickMode=false;
+    const changes=new Map();
+    const getC=el=>{if(!changes.has(el))changes.set(el,{});return changes.get(el)};
+    function setProp(el,prop,to){const c=getC(el);if(!(prop in c))c[prop]={from:getComputedStyle(el).getPropertyValue(prop).trim(),to};c[prop].to=to;el.style.setProperty(prop,to);badge()}
+    function setMany(el,obj){for(const k in obj)setProp(el,k,obj[k])}
+    function cs(){return getComputedStyle(selected)}
+
+    /* ---------- SELECTOR + LABEL ---------- */
+    function selOf(el){if(el.id)return"#"+el.id;const path=[];let n=el;while(n&&n.nodeType===1&&n!==document.body){let p=n.tagName.toLowerCase();const cl=[...n.classList].filter(c=>!c.startsWith("__insp")).slice(0,2);if(cl.length)p+="."+cl.join(".");const par=n.parentElement;if(par){const st=[...par.children].filter(c=>c.tagName===n.tagName);if(st.length>1)p+=`:nth-of-type(${st.indexOf(n)+1})`}path.unshift(p);if(n.id){path[0]="#"+n.id;break}n=par}return path.join(" > ")}
+    function label(el){return{tag:el.tagName.toLowerCase(),cls:[...el.classList].filter(c=>!c.startsWith("__insp")),text:(el.textContent||"").trim().replace(/\s+/g," ").slice(0,40)}}
+
+    /* ---------- PROMPT ---------- */
+    function prompt(){const B=[];for(const[el,props]of changes){const ed=Object.entries(props).filter(([,v])=>v.from!==v.to);if(!ed.length)continue;const{tag,cls,text}=label(el);const L=ed.map(([p,v])=>`  - ${p}: ${v.from} → ${v.to}`);B.push(`Element: <${tag}${cls.length?' class="'+cls.join(" ")+'"':""}>`+(text?`  // "${text}"`:"")+`\nSelector: ${selOf(el)}\nChanges:\n${L.join("\n")}`)}if(!B.length)return"No changes yet.";return"Apply the following visual changes to the project. Use the existing design tokens shown as `var(--token)` — do not hardcode raw values where a token is given. Keep every other style untouched.\n\n"+B.join("\n\n")+"\n\nWrite the changes in the project's existing styling system (CSS/Tailwind/styled-components as appropriate)."}
+
+    /* ---------- ELEMENTS ---------- */
+    const $=(t,c,h)=>{const n=document.createElement(t);if(c)n.className=c;if(h!=null)n.innerHTML=h;return n};
+    const ICON={
+      flowRow:'<svg width=14 height=14 viewBox="0 0 14 14" fill="none"><path d="M2 7h10M9 4l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      flowCol:'<svg width=14 height=14 viewBox="0 0 14 14" fill="none"><path d="M7 2v10M4 9l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      flowWrap:'<svg width=14 height=14 viewBox="0 0 14 14" fill="none"><path d="M2 4h7a2.5 2.5 0 010 5H6m0 0l2-2m-2 2l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      flowGrid:'<svg width=14 height=14 viewBox="0 0 14 14" fill="none"><rect x=2 y=2 width=4 height=4 rx=1 fill="currentColor"/><rect x=8 y=2 width=4 height=4 rx=1 fill="currentColor"/><rect x=2 y=8 width=4 height=4 rx=1 fill="currentColor"/><rect x=8 y=8 width=4 height=4 rx=1 fill="currentColor"/></svg>',
+      none:'<svg width=14 height=14 viewBox="0 0 14 14" fill="none"><path d="M3 11L11 3M3 3l8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+      gap:'<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><rect x=2 y=3 width=3 height=8 rx=1 fill="currentColor"/><rect x=9 y=3 width=3 height=8 rx=1 fill="currentColor"/></svg>',
+      padV:'<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><path d="M2 3h10M2 11h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><rect x=4 y=5 width=6 height=4 rx=1 stroke="currentColor" stroke-width="1.2"/></svg>',
+      padH:'<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><path d="M3 2v10M11 2v10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><rect x=5 y=4 width=4 height=6 rx=1 stroke="currentColor" stroke-width="1.2"/></svg>',
+      radius:'<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><path d="M2 12V6a4 4 0 014-4h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+      plus:'<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+      eye:'<svg width=14 height=14 viewBox="0 0 14 14" fill="none"><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" stroke="currentColor" stroke-width="1.1"/><circle cx=7 cy=7 r=1.6 stroke="currentColor" stroke-width="1.1"/></svg>',
+      minus:'<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><path d="M3 7h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    };
+
+    /* ---------- BASE UI ---------- */
+    const style=document.getElementById("__insp_css");
+    const panel=$("div");panel.id="__insp_panel";document.body.appendChild(panel);
+    const overlay=$("div",null,'<span class="tip"></span>');overlay.id="__insp_overlay";document.body.appendChild(overlay);
+    const launch=$("button",null,'<svg width=14 height=14 viewBox="0 0 14 14" fill="none"><path d="M2 2l4.5 10 1.6-3.9L12 6.5 2 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><span>Inspect</span>');launch.id="__insp_launch";document.body.appendChild(launch);
+
+    function badge(){let t=0;for(const[,p]of changes)t+=Object.values(p).filter(v=>v.from!==v.to).length;launch.querySelector("span").textContent=t?`Inspect · ${t}`:"Inspect"}
+
+    /* ---------- FIELD BUILDERS ---------- */
+    function field(glyph,value,onset,opts={}){
+      const f=$("div","fld");
+      if(glyph)f.appendChild($("span","gl",glyph.length<3&&!glyph.startsWith("<")?glyph:""))
+      if(glyph&&glyph.startsWith("<"))f.querySelector(".gl").innerHTML=glyph;
+      const inp=document.createElement("input");inp.value=value;
+      if(opts.list){const dl=$("datalist");dl.id="__dl_"+Math.random().toString(36).slice(2);for(const n of opts.list)dl.appendChild(new Option(n,"var("+n+")"));panel.appendChild(dl);inp.setAttribute("list",dl.id)}
+      inp.onchange=()=>onset(inp.value);
+      f.appendChild(inp);
+      if(opts.suffix){const s=$("span","suf");s.textContent=opts.suffix;f.appendChild(s)}
+      f.onclick=e=>{if(e.target===f)inp.focus()};
+      return f;
+    }
+    function selField(value,options,onset){
+      const f=$("div","fld");const sel=$("select","bare");
+      for(const o of options)sel.appendChild(new Option(o,o));
+      if(options.includes(value))sel.value=value;
+      sel.onchange=()=>onset(sel.value);f.appendChild(sel);f.style.cursor="pointer";return f;
+    }
+
+    /* ---------- SECTIONS ---------- */
+    function section(title,acts){const s=$("div","ix-sec");const h=$("div","ix-sech");h.appendChild($("span","t",title));const a=$("div","acts");(acts||[]).forEach(([ic,fn])=>{const b=$("span","ix-ico",ic);b.onclick=fn;a.appendChild(b)});h.appendChild(a);s.appendChild(h);return s}
+    function lbl(t){return $("div","ix-lbl",t)}
+
+    /* ---------- RENDER ---------- */
+    function render(){
+      panel.innerHTML="";panel.classList.toggle("open",!!selected);
+      if(!selected)return;
+      const c=cs(),{tag,cls,text}=label(selected);
+      const changed=Object.values(getC(selected)).some(v=>v.from!==v.to);
+
+      const head=$("div","ix-head");
+      head.appendChild($("span","ix-tag",`<b>&lt;${tag}&gt;</b> ${cls.map(x=>"."+x).join(" ")}`));
+      if(changed)head.appendChild($("span","ix-mod","Modified"));
+      panel.appendChild(head);
+      panel.appendChild($("div","ix-sel",selOf(selected)));
+
+      /* ----- AUTO LAYOUT ----- */
+      const al=section("Auto layout");
+      const disp=c.display,dir=c.flexDirection,wrap=c.flexWrap;
+      const seg=$("div","seg");
+      const flow=[["none",ICON.none,{display:"block"}],["row",ICON.flowRow,{display:"flex","flex-direction":"row","flex-wrap":"nowrap"}],["col",ICON.flowCol,{display:"flex","flex-direction":"column"}],["wrap",ICON.flowWrap,{display:"flex","flex-wrap":"wrap"}],["grid",ICON.flowGrid,{display:"grid"}]];
+      const curFlow=disp==="grid"?"grid":disp.includes("flex")?(wrap==="wrap"?"wrap":dir==="column"?"col":"row"):"none";
+      flow.forEach(([k,ic,set])=>{const b=document.createElement("button");b.innerHTML=ic;if(k===curFlow)b.className="on";b.onclick=()=>{setMany(selected,set);render()};seg.appendChild(b)});
+      al.appendChild(seg);
+
+      al.appendChild(lbl("Resizing"));
+      const rz=$("div","ix-row");
+      rz.appendChild(field("W",intpx(c.width),v=>setProp(selected,"width",v)));
+      const hbox=field("H",intpx(c.height),v=>setProp(selected,"height",v),{suffix:c.display.includes("flex")||c.display==="inline-block"?"Hug":""});
+      rz.appendChild(hbox);al.appendChild(rz);
+
+      al.appendChild(lbl("Alignment"));
+      const ar=$("div","alirow");
+      const g9=$("div","grid9");const js=["flex-start","center","flex-end"],ai=["flex-start","center","flex-end"];
+      const curJ=js.indexOf(c.justifyContent)<0?0:js.indexOf(c.justifyContent),curA=ai.indexOf(c.alignItems)<0?0:ai.indexOf(c.alignItems);
+      for(let r=0;r<3;r++)for(let cc=0;cc<3;cc++){const cell=$("i");if(r===curA&&cc===curJ)cell.className="on";cell.onclick=()=>{setMany(selected,{display:c.display.includes("flex")?c.display:"flex","justify-content":js[cc],"align-items":ai[r]});render()};g9.appendChild(cell)}
+      ar.appendChild(g9);
+      const gapcol=$("div","col");gapcol.appendChild(lbl2("Gap"));gapcol.appendChild(field(ICON.gap,intpx(c.gap||c.gridGap||"0px"),v=>setProp(selected,"gap",v),{list:Object.values(spaceTokens)}));ar.appendChild(gapcol);
+      al.appendChild(ar);
+
+      al.appendChild(lbl("Padding"));
+      const pr=$("div","ix-row");
+      pr.appendChild(field(ICON.padV,intpx(c.paddingTop),v=>setMany(selected,{"padding-top":v,"padding-bottom":v}),{list:Object.values(spaceTokens)}));
+      pr.appendChild(field(ICON.padH,intpx(c.paddingLeft),v=>setMany(selected,{"padding-left":v,"padding-right":v}),{list:Object.values(spaceTokens)}));
+      al.appendChild(pr);
+      panel.appendChild(al);
+
+      /* ----- APPEARANCE ----- */
+      const ap=section("Appearance");
+      const ar2=$("div","ix-row");
+      ar2.appendChild(field("◐",Math.round(parseFloat(c.opacity)*100),v=>setProp(selected,"opacity",(parseFloat(v)/100)||1),{suffix:"%"}));
+      const rad=field(ICON.radius,intpx(c.borderRadius),v=>setProp(selected,"border-radius",v),{list:Object.values(radiusTokens)});
+      const rtk=tokVal(c.borderRadius,radiusTokens);if(rtk)rad.querySelector("input").value="var("+rtk+")";
+      ar2.appendChild(rad);ap.appendChild(ar2);
+      panel.appendChild(ap);
+
+      /* ----- FILL ----- */
+      const fl=section("Fill",[[ICON.plus,()=>{}]]);
+      fl.appendChild(fillRow("background-color",c.backgroundColor));
+      panel.appendChild(fl);
+
+      /* ----- TYPOGRAPHY (text elements) ----- */
+      if(text&&selected.children.length===0){
+        const tp=section("Typography");
+        const r1=$("div","ix-row");
+        r1.appendChild(field("Aa",intpx(c.fontSize),v=>setProp(selected,"font-size",v),{list:Object.values(sizeTokens)}));
+        r1.appendChild(selField(c.fontWeight,["300","400","500","600","700","800"],v=>setProp(selected,"font-weight",v)));
+        tp.appendChild(r1);
+        const r2=$("div","ix-row");
+        r2.appendChild(field("LH",c.lineHeight==="normal"?"normal":intpx(c.lineHeight),v=>setProp(selected,"line-height",v)));
+        r2.appendChild(field("LS",c.letterSpacing==="normal"?"0":c.letterSpacing,v=>setProp(selected,"letter-spacing",v)));
+        tp.appendChild(r2);
+        tp.appendChild(lbl("Color"));
+        tp.appendChild(fillRow("color",c.color));
+        panel.appendChild(tp);
+      }
+
+      /* ----- STROKE ----- */
+      const st=section("Stroke",[[ICON.plus,()=>{setProp(selected,"border-style","solid");setProp(selected,"border-width","1px");render()}]]);
+      if(parseFloat(c.borderTopWidth)>0){
+        st.appendChild(fillRow("border-color",c.borderTopColor));
+        const sr=$("div","ix-row");sr.appendChild(field("W",intpx(c.borderTopWidth),v=>setProp(selected,"border-width",v)));st.appendChild(sr);
+      } else st.querySelector(".acts").style.opacity=".7";
+      panel.appendChild(st);
+
+      /* ----- EFFECTS ----- */
+      const ef=section("Effects",[[ICON.plus,()=>{}]]);
+      const sh=c.boxShadow;if(sh&&sh!=="none"){const er=$("div","ix-row one");er.appendChild(field("",sh,v=>setProp(selected,"box-shadow",v)));ef.appendChild(er)}
+      panel.appendChild(ef);
+
+      /* ----- FOOTER ----- */
+      const foot=$("div","ix-foot");
+      const cp=$("button","cp");cp.textContent="Copy config";cp.onclick=async()=>{await navigator.clipboard.writeText(prompt());cp.textContent="Copied ✓";setTimeout(()=>cp.textContent="Copy config",1200)};
+      const rs=$("button","rs");rs.textContent="Reset";rs.onclick=()=>{const ch=getC(selected);for(const p in ch)selected.style.removeProperty(p);changes.delete(selected);badge();render()};
+      foot.append(cp,rs);panel.appendChild(foot);
+    }
+    function lbl2(t){const d=$("div","ix-lbl",t);d.style.margin="0 0 5px";return d}
+
+    function fillRow(prop,value){
+      const row=$("div","fill");
+      const wrap=$("div","sw-wrap");
+      const sw=$("div","swatch");sw.style.background=value;
+      const inp=document.createElement("input");inp.type="color";inp.value=rgbHex(value);
+      const tk=tokColor(value);
+      inp.oninput=()=>{setProp(selected,prop,inp.value);sw.style.background=inp.value;nm.textContent=inp.value};
+      wrap.append(sw,inp);
+      const nm=$("span","nm",tk?prettyTok(tk):rgbHex(value));
+      row.append(wrap,nm);
+      const eye=$("span","ix-ico",ICON.eye);const minus=$("span","ix-ico",ICON.minus);
+      row.append(eye,minus);
+      if(tk){const sel=$("select","bare");sel.style.cssText="position:absolute;inset:0;opacity:0;width:100%";for(const n of Object.values(colorTokens))sel.appendChild(new Option(prettyTok(n),"var("+n+")"));sel.value="var("+tk+")";sel.onchange=()=>{setProp(selected,prop,sel.value);const rv=resolve(tk2name(sel.value));sw.style.background=rv;nm.textContent=prettyTok(tk2name(sel.value))};row.style.position="relative";row.appendChild(sel)}
+      return row;
+    }
+    const tk2name=v=>v.replace(/^var\(|\)$/g,"");
+
+    /* ---------- PICK ---------- */
+    const isTool=t=>t.closest("#__insp_panel,#__insp_launch,#__insp_overlay");
+    function move(e){if(!pickMode)return;const t=e.target;if(isTool(t)){overlay.style.display="none";return}const r=t.getBoundingClientRect();overlay.style.display="block";overlay.style.left=r.left+"px";overlay.style.top=r.top+"px";overlay.style.width=r.width+"px";overlay.style.height=r.height+"px";overlay.querySelector(".tip").textContent=t.tagName.toLowerCase()+([...t.classList][0]?"."+[...t.classList][0]:"")}
+    function click(e){if(!pickMode)return;const t=e.target;if(isTool(t))return;e.preventDefault();e.stopPropagation();selected=t;setPick(false);overlay.style.display="none";render()}
+    function setPick(on){pickMode=on;launch.querySelector("span").textContent=on?"Esc to cancel":"Inspect";launch.style.background=on?"#2dd4a7":"#0d99ff";document.body.style.cursor=on?"crosshair":"";if(!on)badge()}
+    launch.onclick=()=>setPick(!pickMode);
+    document.addEventListener("mousemove",move,true);
+    document.addEventListener("click",click,true);
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"){setPick(false);overlay.style.display="none"}});
+
+    /* ---------- helpers ---------- */
+    function intpx(v){if(v==null)return"";const n=parseFloat(v);return isNaN(n)?v:(Math.round(n*100)/100)+(/px|em|rem|%/.test(v)?(v.match(/px|em|rem|%/)[0]):"")}
+    function rgbHex(v){const m=(""+v).match(/\d+/g);if(!m)return"#000000";return"#"+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,"0")).join("")}
+
+    badge();
+    console.log("[Inspector] tokens detected:",Object.keys(TOKENS).length);
+  })();
+  </script>
+</body>
+</html>
