@@ -12,6 +12,7 @@ import type { GroupSchema, PropSchema, TokenFamily } from "../core/types";
 import { ColorPicker } from "./colorpicker";
 import { VarPopover } from "./varpopover";
 import { PANEL_CSS } from "./panel.css";
+import { FONT_FACE_CSS } from "./fonts";
 
 export interface InspectorOptions {
   tokens?: TokenSource;
@@ -641,20 +642,16 @@ function toHex(v: string): string {
   return "#" + m.slice(0, 3).map((x) => Number(x).toString(16).padStart(2, "0")).join("");
 }
 
-// Load Geist into the document head (not the Shadow DOM) — @font-face/@import
-// inside a shadow root is unreliable, but document-level fonts resolve in it.
+// Inject the self-hosted Geist @font-face into document.head. Document-level
+// fonts resolve inside the Shadow DOM (shadow-scoped @font-face does not), and
+// the font is embedded (base64) so the panel always uses its own font with no
+// network/CDN/CSP dependency, regardless of what the host page uses.
 function ensureFonts(): void {
   if (document.getElementById("vqi-fonts")) return;
-  const pre = document.createElement("link");
-  pre.rel = "preconnect";
-  pre.href = "https://fonts.gstatic.com";
-  pre.crossOrigin = "anonymous";
-  document.head.append(pre);
-  const link = document.createElement("link");
-  link.id = "vqi-fonts";
-  link.rel = "stylesheet";
-  link.href = "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap";
-  document.head.append(link);
+  const style = document.createElement("style");
+  style.id = "vqi-fonts";
+  style.textContent = FONT_FACE_CSS;
+  document.head.append(style);
 }
 
 let defined = false;
