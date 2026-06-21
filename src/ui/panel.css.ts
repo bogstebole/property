@@ -1,11 +1,11 @@
 // Property-panel CSS, scoped inside the Web Component's Shadow DOM.
 // Colors and states are the contract from SIDEBAR_SPEC.md §4.
-// Inter + Roboto Mono are loaded so the panel looks identical regardless of
-// whether the host machine has them installed.
-const FONT_STACK = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif";
+// Geist + Geist Mono are loaded into document.head (see ensureFonts in panel.ts)
+// because @font-face/@import inside a Shadow DOM is unreliable; once loaded in
+// the document the families resolve here.
+const FONT_STACK = "'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif";
 
 export const PANEL_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
 :host{all:initial;font-family:${FONT_STACK}}
 *{box-sizing:border-box}
 .wrap{font-family:${FONT_STACK};font-size:11px;line-height:1.45;color:#EAEAEA}
@@ -20,21 +20,21 @@ export const PANEL_CSS = `
 
 /* ---- header / identity ---- */
 .ident{padding:11px 12px 9px;border-bottom:1px solid #1B1B1B;position:sticky;top:0;background:#2C2C2C;z-index:3}
-.ident .tagline{font:12px/1.3 'Roboto Mono',ui-monospace,monospace;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ident .tagline{font:12px/1.3 'Geist Mono',ui-monospace,monospace;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ident .tagline .cls{color:#4DA8FF}
-.ident .crumb{font:10px/1.4 'Roboto Mono',ui-monospace,monospace;color:#7A7A7A;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ident .crumb{font:10px/1.4 'Geist Mono',ui-monospace,monospace;color:#7A7A7A;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ident .crumb b{color:#9C9C9C;font-weight:400}
 .ident .crumb span{cursor:pointer}
 .ident .crumb span:hover{color:#EAEAEA;text-decoration:underline}
-.ident .selector{margin-top:6px;font:10px/1.3 'Roboto Mono',ui-monospace,monospace;color:#6E6E6E;
+.ident .selector{margin-top:6px;font:10px/1.3 'Geist Mono',ui-monospace,monospace;color:#6E6E6E;
   background:#262626;border-radius:4px;padding:4px 6px;cursor:copy;word-break:break-all}
 .ident .selector:hover{color:#9C9C9C}
 
 /* ---- section ---- */
 .sec{padding:10px 12px;border-bottom:1px solid #1B1B1B}
 .sech{display:flex;align-items:center;gap:6px;height:18px;margin-bottom:8px}
-.sech .t{font:600 11px/1 'Inter';color:#EAEAEA}
-.sech .badge{font:600 9px/1 'Inter';color:#0D99FF;background:rgba(13,153,255,.15);border-radius:7px;padding:2px 5px}
+.sech .t{font:600 11px/1 'Geist';color:#EAEAEA}
+.sech .badge{font:600 9px/1 'Geist';color:#0D99FF;background:rgba(13,153,255,.15);border-radius:7px;padding:2px 5px}
 .sech .add{margin-left:auto;color:#9C9C9C;cursor:pointer;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:4px}
 .sech .add:hover{background:#3A3A3A;color:#fff}
 .lbl{color:#8C8C8C;font-size:11px;margin:7px 0 4px}
@@ -46,8 +46,8 @@ export const PANEL_CSS = `
   border:1px solid transparent;background:#383838;min-width:0;position:relative}
 .field:hover{background:#4A4A4A}
 .field:focus-within{background:#2C2C2C;border-color:#0D99FF}
-.field .gl{color:#8C8C8C;font:10px/1 'Inter';flex:none;min-width:12px;text-align:center}
-.field input{all:unset;flex:1;min-width:0;color:#EAEAEA;font:11px/1 'Inter'}
+.field .gl{color:#8C8C8C;font:10px/1 'Geist';flex:none;min-width:12px;text-align:center}
+.field input{all:unset;flex:1;min-width:0;color:#EAEAEA;font:11px/1 'Geist'}
 .field:hover input{color:#fff}
 .field input::placeholder{color:#6E6E6E}
 .field.sel .selval{flex:1;min-width:0;color:#EAEAEA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -72,7 +72,7 @@ export const PANEL_CSS = `
 .field.bound{background:rgba(13,153,255,.12)}
 .field.bound:hover{background:rgba(13,153,255,.2)}
 .field .dia{color:#0D99FF;flex:none;font-size:11px;line-height:1}
-.field .tok{flex:1;min-width:0;color:#CFE6FF;font:11px/1 'Inter';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field .tok{flex:1;min-width:0;color:#CFE6FF;font:11px/1 'Geist';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* empty / mixed value */
 .field.empty input{color:#6E6E6E}
@@ -97,7 +97,7 @@ export const PANEL_CSS = `
 .seg{display:flex;background:#383838;border-radius:6px;padding:2px;gap:2px}
 .seg.mod{border-left:2px solid #0D99FF}
 .seg button{flex:1;height:24px;display:flex;align-items:center;justify-content:center;background:none;border:none;
-  border-radius:4px;color:#9C9C9C;cursor:pointer;font:10px/1 'Inter';padding:0 4px}
+  border-radius:4px;color:#9C9C9C;cursor:pointer;font:10px/1 'Geist';padding:0 4px}
 .seg button:hover{background:#4A4A4A;color:#fff}
 .seg button.on{background:#0D99FF;color:#fff}
 
@@ -140,18 +140,18 @@ export const PANEL_CSS = `
 .drawer{position:fixed;right:264px;bottom:0;width:300px;max-height:60vh;z-index:2147483641;
   background:#262626;border:1px solid #1B1B1B;border-radius:8px 0 0 0;overflow:auto;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
 .drawer .dh{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #1B1B1B;position:sticky;top:0;background:#262626}
-.drawer .dh .t{font:600 11px 'Inter';color:#fff}
+.drawer .dh .t{font:600 11px 'Geist';color:#fff}
 .drawer .dh .x{margin-left:auto;cursor:pointer;color:#9C9C9C}
 .drawer .grp{padding:8px 12px;border-bottom:1px solid #1B1B1B}
-.drawer .grp .el{font:11px/1.3 'Roboto Mono',monospace;color:#4DA8FF;margin-bottom:5px}
-.drawer .chg{display:flex;align-items:center;gap:6px;font:10px/1.4 'Roboto Mono',monospace;color:#B8B8B8;padding:2px 0}
+.drawer .grp .el{font:11px/1.3 'Geist Mono',monospace;color:#4DA8FF;margin-bottom:5px}
+.drawer .chg{display:flex;align-items:center;gap:6px;font:10px/1.4 'Geist Mono',monospace;color:#B8B8B8;padding:2px 0}
 .drawer .chg .p{color:#8C8C8C}
 .drawer .chg .to{color:#CFE6FF}
 .drawer .chg .rv{margin-left:auto;cursor:pointer;color:#7A7A7A}
 .drawer .chg .rv:hover{color:#fff}
 .drawer .dfoot{position:sticky;bottom:0;background:#262626;border-top:1px solid #1B1B1B;padding:9px 12px;display:flex;gap:8px}
-.drawer .dfoot .rsa{flex:none;height:28px;background:#383838;color:#D4D4D4;border:none;border-radius:6px;padding:0 10px;cursor:pointer;font:11px 'Inter'}
-.drawer .dfoot .cp{flex:1;height:28px;background:#0D99FF;color:#fff;border:none;border-radius:6px;cursor:pointer;font:600 11px 'Inter'}
+.drawer .dfoot .rsa{flex:none;height:28px;background:#383838;color:#D4D4D4;border:none;border-radius:6px;padding:0 10px;cursor:pointer;font:11px 'Geist'}
+.drawer .dfoot .cp{flex:1;height:28px;background:#0D99FF;color:#fff;border:none;border-radius:6px;cursor:pointer;font:600 11px 'Geist'}
 
 /* ---- color picker popover ---- */
 .cpick{position:fixed;right:272px;width:236px;z-index:2147483643;background:#2C2C2C;border:1px solid #1B1B1B;
@@ -179,7 +179,7 @@ export const PANEL_CSS = `
 .cp-foot{display:flex;gap:6px;margin-top:10px}
 .cp-fmt{display:flex;align-items:center;color:#9C9C9C;padding:0 4px}
 .cp-hex{flex:1;min-width:0;height:26px;background:#383838;border:1px solid transparent;border-radius:5px;
-  color:#EAEAEA;padding:0 7px;font-family:'Roboto Mono',monospace;font-size:11px;text-transform:uppercase}
+  color:#EAEAEA;padding:0 7px;font-family:'Geist Mono',monospace;font-size:11px;text-transform:uppercase}
 .cp-hex:focus{outline:none;border-color:#0D99FF;background:#2C2C2C}
 .cp-ap{width:48px;height:26px;background:#383838;border:1px solid transparent;border-radius:5px;color:#EAEAEA;padding:0 6px;font-size:11px;font-family:inherit}
 .cp-ap:focus{outline:none;border-color:#0D99FF;background:#2C2C2C}
@@ -202,7 +202,7 @@ export const PANEL_CSS = `
 
 /* ---- launcher ---- */
 .launch{position:fixed;bottom:20px;right:20px;z-index:2147483642;cursor:pointer;background:#0D99FF;color:#fff;
-  border:none;border-radius:7px;padding:9px 15px;font:600 12px 'Inter',system-ui;box-shadow:0 6px 20px rgba(13,153,255,.45);
+  border:none;border-radius:7px;padding:9px 15px;font:600 12px 'Geist',system-ui;box-shadow:0 6px 20px rgba(13,153,255,.45);
   display:flex;align-items:center;gap:7px}
 .launch.active{background:#2dd4a7}
 `;

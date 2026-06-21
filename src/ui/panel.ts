@@ -30,6 +30,7 @@ export class VisualQAInspector extends HTMLElement {
   private varPopover: VarPopover | null = null;
 
   connectedCallback(): void {
+    ensureFonts();
     const root = this.attachShadow({ mode: "open" });
     const style = document.createElement("style");
     style.textContent = PANEL_CSS;
@@ -638,6 +639,22 @@ function toHex(v: string): string {
   const m = v.match(/\d+/g);
   if (!m) return "#000000";
   return "#" + m.slice(0, 3).map((x) => Number(x).toString(16).padStart(2, "0")).join("");
+}
+
+// Load Geist into the document head (not the Shadow DOM) — @font-face/@import
+// inside a shadow root is unreliable, but document-level fonts resolve in it.
+function ensureFonts(): void {
+  if (document.getElementById("vqi-fonts")) return;
+  const pre = document.createElement("link");
+  pre.rel = "preconnect";
+  pre.href = "https://fonts.gstatic.com";
+  pre.crossOrigin = "anonymous";
+  document.head.append(pre);
+  const link = document.createElement("link");
+  link.id = "vqi-fonts";
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap";
+  document.head.append(link);
 }
 
 let defined = false;
