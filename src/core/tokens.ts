@@ -75,6 +75,11 @@ export class TokenResolver {
       for (const [cls, name] of Object.entries(source.classMap)) this.classToToken.set(cls, name);
     }
 
+    // Dedupe by name — the same var often appears in both the manifest and the
+    // runtime CSS read; keep the first occurrence.
+    const seen = new Set<string>();
+    this.tokens = this.tokens.filter((t) => (seen.has(t.name) ? false : (seen.add(t.name), true)));
+
     this.buildReverseMaps();
   }
 

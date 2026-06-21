@@ -10,6 +10,7 @@ import { buildPrompt } from "../core/prompt";
 import { elementContext, buildSelector } from "../core/selector";
 import type { GroupSchema, PropSchema, TokenFamily } from "../core/types";
 import { ColorPicker } from "./colorpicker";
+import { VarPopover } from "./varpopover";
 import { PANEL_CSS } from "./panel.css";
 
 export interface InspectorOptions {
@@ -26,6 +27,7 @@ export class VisualQAInspector extends HTMLElement {
   private drawerOpen = false;
   private perSide = new Set<string>(); // which spacing controls are expanded
   private colorPicker: ColorPicker | null = null;
+  private varPopover: VarPopover | null = null;
 
   connectedCallback(): void {
     const root = this.attachShadow({ mode: "open" });
@@ -180,7 +182,6 @@ export class VisualQAInspector extends HTMLElement {
     f.append(Object.assign(el("span", "gl"), { textContent: prop.label ?? prop.css }));
 
     if (bound) {
-      f.append(Object.assign(el("span", "dia"), { textContent: "◇" }));
       f.append(Object.assign(el("span", "tok"), { textContent: prettyTok(bound) }));
     } else {
       const input = document.createElement("input");
@@ -189,7 +190,16 @@ export class VisualQAInspector extends HTMLElement {
       input.onchange = () => this.commit(elm, prop, input.value);
       f.append(input);
     }
-    if (prop.family) f.append(this.varSelect(elm, prop));
+    if (prop.family) {
+      const dia = el("span", "diabtn");
+      dia.textContent = "◇";
+      dia.title = "Bind variable";
+      dia.onclick = (e) => {
+        e.stopPropagation();
+        this.openVars(elm, prop, f, bound);
+      };
+      f.append(dia);
+    }
     if (modified) f.append(this.revert(elm, prop.css));
     return f;
   }
@@ -241,16 +251,55 @@ export class VisualQAInspector extends HTMLElement {
       input.onchange = () => this.store.setProp(elm, prop.css, input.value);
       f.append(input);
     } else {
-      const sel = document.createElement("select");
-      sel.className = "val";
-      const opts = prop.options.includes(current) ? prop.options : [current, ...prop.options];
-      for (const o of opts) sel.append(new Option(o, o));
-      sel.value = current;
-      sel.onchange = () => this.store.setProp(elm, prop.css, sel.value);
-      f.append(sel);
+      f.classList.add("sel");
+      f.style.cursor = "pointer";
+      f.append(Object.assign(el("span", "selval"), { textContent: current }));
+      f.append(Object.assign(el("span", "chev"), { textContent: "▾" }));
+      f.onclick = (e) => {
+        if ((e.target as HTMLElement).closest(".revert")) return;
+        this.openSelect(elm, prop, f, current);
+      };
     }
     if (modified) f.append(this.revert(elm, prop.css));
     return f;
+  }
+
+  // ---------- custom select dropdown ----------
+  private selDrop: HTMLDivElement | null = null;
+  private selAnchor: HTMLElement | null = null;
+
+  private openSelect(elm: HTMLElement, prop: PropSchema, anchor: HTMLElement, current: string): void {
+    this.closeSelect();
+    const drop = el("div", "seldrop");
+    for (const o of prop.options ?? []) {
+      const it = el("div", "seldrop-it");
+      it.textContent = o;
+      if (o === current) it.classList.add("on");
+      it.onclick = () => { this.store.setProp(elm, prop.css, o); this.closeSelect(); };
+      drop.append(it);
+    }
+    (this.shadowRoot!.querySelector(".wrap") as HTMLElement).append(drop);
+    const r = anchor.getBoundingClientRect();
+    drop.style.left = r.left + "px";
+    drop.style.width = r.width + "px";
+    const dh = drop.offsetHeight;
+    const below = r.bottom + 4;
+    drop.style.top = (below + dh > window.innerHeight - 8 ? r.top - dh - 4 : below) + "px";
+    this.selDrop = drop;
+    this.selAnchor = anchor;
+    setTimeout(() => document.addEventListener("pointerdown", this.onSelOutside, true));
+  }
+
+  private onSelOutside = (e: PointerEvent): void => {
+    const path = e.composedPath();
+    if (this.selDrop && !path.includes(this.selDrop) && !path.includes(this.selAnchor as HTMLElement)) this.closeSelect();
+  };
+
+  private closeSelect(): void {
+    document.removeEventListener("pointerdown", this.onSelOutside, true);
+    this.selDrop?.remove();
+    this.selDrop = null;
+    this.selAnchor = null;
   }
 
   // ---------- segmented ----------
@@ -494,23 +543,22 @@ export class VisualQAInspector extends HTMLElement {
     });
   }
 
-  // ---------- token helpers ----------
-  private varSelect(elm: HTMLElement, prop: PropSchema): HTMLElement {
-    const sel = document.createElement("select");
-    sel.className = "varsel";
-    sel.append(new Option("◇", ""));
-    for (const t of this.resolver.allTokens(prop.family as TokenFamily)) {
-      sel.append(new Option(prettyTok(t.name), "b:" + t.name));
-    }
-    sel.append(new Option("Detach", "detach"));
-    sel.value = "";
-    sel.onchange = () => {
-      if (sel.value.startsWith("b:")) this.bind(elm, prop.css, sel.value.slice(2));
-      else if (sel.value === "detach") this.unbind(elm, prop.css);
-      sel.value = "";
-    };
-    return sel;
+  // ---------- variables popover ----------
+  private openVars(elm: HTMLElement, prop: PropSchema, anchor: HTMLElement, bound: string | null): void {
+    this.varPopover?.close();
+    const current = bound ? bound.replace(/^var\(|\)$/g, "") : null;
+    this.varPopover = new VarPopover({
+      mount: this.shadowRoot!.querySelector(".wrap") as HTMLElement,
+      anchor,
+      tokens: this.resolver.allTokens(prop.family as TokenFamily),
+      current,
+      onBind: (t) => { this.bind(elm, prop.css, t.name); this.varPopover?.close(); },
+      onDetach: () => { this.unbind(elm, prop.css); this.varPopover?.close(); },
+      onClose: () => { this.varPopover = null; },
+    });
   }
+
+  // ---------- token helpers ----------
 
   private bind(elm: HTMLElement, css: string, tokenName: string): void {
     const token = this.allTokensFlat().find((t) => t.name === tokenName);

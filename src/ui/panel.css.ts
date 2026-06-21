@@ -50,7 +50,15 @@ export const PANEL_CSS = `
 .field input{all:unset;flex:1;min-width:0;color:#EAEAEA;font:11px/1 'Inter'}
 .field:hover input{color:#fff}
 .field input::placeholder{color:#6E6E6E}
-.field select.val{all:unset;flex:1;color:#EAEAEA;font:11px/1 'Inter';cursor:pointer}
+.field.sel .selval{flex:1;min-width:0;color:#EAEAEA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field.sel .chev{flex:none;color:#8C8C8C;font-size:9px}
+.field.sel:hover .chev{color:#fff}
+.seldrop{position:fixed;z-index:2147483643;background:#2C2C2C;border:1px solid #1B1B1B;border-radius:6px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);padding:4px;max-height:220px;overflow-y:auto;font-family:${FONT_STACK};font-size:11px}
+.seldrop-it{height:26px;display:flex;align-items:center;padding:0 8px;border-radius:4px;color:#EAEAEA;cursor:pointer}
+.seldrop-it:hover{background:#383838}
+.seldrop-it.on{color:#0D99FF}
+.seldrop-it.on::after{content:"✓";margin-left:auto;color:#0D99FF}
 
 /* modified */
 .field.mod{border-left:2px solid #0D99FF;padding-left:6px}
@@ -70,9 +78,9 @@ export const PANEL_CSS = `
 .field.empty input{color:#6E6E6E}
 .field.mixed input{color:#8C8C8C;font-style:italic}
 
-/* var picker (inline select acting as ◇) */
-.varsel{all:unset;flex:none;color:#0D99FF;font-size:12px;cursor:pointer;width:16px;text-align:center}
-.varsel:hover{color:#5CC8FF}
+/* ◇ button that opens the variables popover */
+.diabtn{flex:none;color:#0D99FF;font-size:12px;line-height:1;cursor:pointer;padding:0 3px;border-radius:3px}
+.diabtn:hover{background:rgba(13,153,255,.2);color:#5CC8FF}
 
 /* color / fill row */
 .fill{display:flex;align-items:center;gap:7px;height:28px;padding:0 6px;border-radius:5px;background:#383838;border:1px solid transparent;position:relative}
@@ -187,6 +195,10 @@ export const PANEL_CSS = `
 .cp-vsw{width:16px;height:16px;border-radius:3px;border:1px solid rgba(255,255,255,.15);flex:none}
 .cp-vname{color:#EAEAEA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cp-empty{color:#7A7A7A;padding:10px 4px;text-align:center}
+.cp-detach{display:flex;align-items:center;gap:7px;height:28px;padding:0 6px;border-radius:5px;cursor:pointer;color:#FF8A8A;margin-bottom:4px;border-bottom:1px solid #1B1B1B}
+.cp-detach:hover{background:#383838}
+.cp-check{margin-left:auto;color:#0D99FF;flex:none}
+.vpop{width:220px}
 
 /* ---- launcher ---- */
 .launch{position:fixed;bottom:20px;right:20px;z-index:2147483642;cursor:pointer;background:#0D99FF;color:#fff;
