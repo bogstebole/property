@@ -9,6 +9,7 @@ import { SCHEMA } from "../core/schema";
 import { buildPrompt } from "../core/prompt";
 import { elementContext, buildSelector } from "../core/selector";
 import type { GroupSchema, PropSchema, TokenFamily } from "../core/types";
+import { ColorPicker } from "./colorpicker";
 import { PANEL_CSS } from "./panel.css";
 
 export interface InspectorOptions {
@@ -24,6 +25,7 @@ export class VisualQAInspector extends HTMLElement {
   private drawerEl: HTMLDivElement | null = null;
   private drawerOpen = false;
   private perSide = new Set<string>(); // which spacing controls are expanded
+  private colorPicker: ColorPicker | null = null;
 
   connectedCallback(): void {
     const root = this.attachShadow({ mode: "open" });
@@ -203,17 +205,23 @@ export class VisualQAInspector extends HTMLElement {
 
     const sw = el("div", "sw");
     sw.style.background = current;
-    const picker = document.createElement("input");
-    picker.type = "color";
-    picker.className = "pick";
-    picker.value = toHex(current);
-    picker.oninput = () => {
-      this.store.setProp(elm, prop.css, picker.value);
-    };
     const nm = el("div", "nm");
     nm.textContent = bound ? prettyTok(bound) : toHex(current);
-    f.append(sw, picker, nm);
-    if (prop.family) f.append(this.varSelect(elm, prop));
+    f.style.cursor = "pointer";
+    f.append(sw, nm);
+    f.onclick = (e) => {
+      if ((e.target as HTMLElement).closest(".dia")) return;
+      this.openColor(elm, prop, f, current, "custom");
+    };
+    // ◇ opens the picker straight on the Variables tab
+    const dia = el("span", "dia");
+    dia.textContent = "◇";
+    dia.title = "Bind variable";
+    dia.onclick = (e) => {
+      e.stopPropagation();
+      this.openColor(elm, prop, f, current, "variables");
+    };
+    f.append(dia);
     if (modified) f.append(this.revert(elm, prop.css));
     return f;
   }
@@ -469,6 +477,21 @@ export class VisualQAInspector extends HTMLElement {
 
     root.append(d);
     this.drawerEl = d;
+  }
+
+  // ---------- color picker ----------
+  private openColor(elm: HTMLElement, prop: PropSchema, anchor: HTMLElement, current: string, tab: "custom" | "variables"): void {
+    this.colorPicker?.close();
+    this.colorPicker = new ColorPicker({
+      mount: this.shadowRoot!.querySelector(".wrap") as HTMLElement,
+      anchor,
+      value: current,
+      tab,
+      tokens: this.resolver.allTokens("color"),
+      onPick: (css) => this.store.setProp(elm, prop.css, css),
+      onBind: (t) => this.bind(elm, prop.css, t.name),
+      onClose: () => { this.colorPicker = null; },
+    });
   }
 
   // ---------- token helpers ----------
