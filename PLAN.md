@@ -40,8 +40,9 @@ inspector/
       Reverse maps value→token and class→token. Raw values labeled as non-token.
 - [x] **F3 — Token build plugin (Vite).** Assembles manifest from Tailwind config / CSS vars / inline
       tokens, injects `<script id="design-tokens">` in dev/staging only. Verified injecting in `example/`.
-- [ ] **F4 — UI panel (Web Component).** Placeholder Figma-style panel built (Shadow DOM, works).
-      Rebuild 1:1 once the user's Figma design lands.
+- [x] **F4 — UI panel (Web Component).** Built 1:1 from the Figma spec (`SIDEBAR_SPEC.md`): identity
+      header + breadcrumb + selector, conditional Position/Typography/Flow, modified state + section
+      badges + changes drawer, variable chips (bind/detach), exact §4 colors. Verified in `example/`.
 - [x] **F5 — Packaging.** ESM build via tsup, exports `.` / `./react` / `./vite`. Typecheck + build green.
 - [ ] **F6 — Publish (later).** `npm publish`, versioning, MIT license, optional docs site.
 

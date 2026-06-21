@@ -1,9 +1,14 @@
 // Property-panel CSS, scoped inside the Web Component's Shadow DOM.
 // Colors and states are the contract from SIDEBAR_SPEC.md §4.
+// Inter + Roboto Mono are loaded so the panel looks identical regardless of
+// whether the host machine has them installed.
+const FONT_STACK = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif";
+
 export const PANEL_CSS = `
-:host{all:initial}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+:host{all:initial;font-family:${FONT_STACK}}
 *{box-sizing:border-box}
-.wrap{font:11px/1.45 'Inter',-apple-system,system-ui,sans-serif;color:#EAEAEA}
+.wrap{font-family:${FONT_STACK};font-size:11px;line-height:1.45;color:#EAEAEA}
 
 /* ---- shell ---- */
 .panel{position:fixed;top:0;right:0;height:100vh;width:264px;z-index:2147483641;
@@ -87,21 +92,21 @@ export const PANEL_CSS = `
 .seg button:hover{background:#4A4A4A;color:#fff}
 .seg button.on{background:#0D99FF;color:#fff}
 
-/* align grid */
-.alirow{display:flex;gap:8px;align-items:flex-start}
-.grid9{width:54px;height:54px;background:#383838;border-radius:6px;display:grid;
-  grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);flex:none}
-.grid9 i{display:flex;align-items:center;justify-content:center;cursor:pointer}
-.grid9 i::before{content:"";width:4px;height:4px;border-radius:1px;background:#6A6A6A}
-.grid9 i:hover::before{background:#fff}
-.grid9 i.on::before{width:11px;height:3px;background:#0D99FF}
-.alirow .col{flex:1;min-width:0}
+/* flow: direction arrows + wrap toggle */
+.flow{display:flex;gap:6px;margin:5px 0}
+.flow .dir{display:flex;flex:1;background:#383838;border-radius:6px;padding:2px;gap:2px}
+.flow .dir button{flex:1;height:24px;display:flex;align-items:center;justify-content:center;background:none;border:none;border-radius:4px;color:#9C9C9C;cursor:pointer}
+.flow .dir button:hover{background:#4A4A4A;color:#fff}
+.flow .dir button.on{background:#0D99FF;color:#fff}
+.flow .wrapbtn{width:34px;height:28px;display:flex;align-items:center;justify-content:center;background:#383838;border:none;border-radius:6px;color:#9C9C9C;cursor:pointer}
+.flow .wrapbtn:hover{background:#4A4A4A;color:#fff}
+.flow .wrapbtn.on{background:#0D99FF;color:#fff}
 
-/* spacing per-side */
-.spacing-toggle{margin-left:auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
-  border-radius:4px;color:#9C9C9C;cursor:pointer}
-.spacing-toggle:hover{background:#3A3A3A;color:#fff}
-.spacing-toggle.on{background:#0D99FF;color:#fff}
+/* gear / individual toggle inline at end of a row */
+.gear{width:28px;height:28px;flex:none;display:flex;align-items:center;justify-content:center;background:#383838;border:none;border-radius:5px;color:#9C9C9C;cursor:pointer}
+.gear:hover{background:#4A4A4A;color:#fff}
+.gear.on{background:#0D99FF;color:#fff}
+.row.with-gear{grid-template-columns:1fr 1fr 28px}
 
 /* checkbox */
 .chk{display:flex;align-items:center;gap:7px;margin:8px 0 2px;color:#D4D4D4;cursor:pointer}
@@ -110,16 +115,16 @@ export const PANEL_CSS = `
 /* empty addable section */
 .addrow{color:#7A7A7A;font-size:11px;padding:2px 0}
 
-/* ---- footer ---- */
-.foot{position:sticky;bottom:0;background:#262626;border-top:1px solid #1B1B1B;padding:9px 12px;display:flex;align-items:center;gap:8px}
-.foot .count{font:11px/1 'Inter';color:#9C9C9C;display:flex;align-items:center;gap:6px;cursor:pointer}
-.foot .count::before{content:"";width:6px;height:6px;border-radius:50%;background:#0D99FF}
+/* ---- footer (wraps to stack when it can't fit inline) ---- */
+.foot{position:sticky;bottom:0;background:#262626;border-top:1px solid #1B1B1B;padding:9px 12px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end}
+.foot .count{font-size:11px;color:#9C9C9C;display:flex;align-items:center;gap:6px;cursor:pointer;flex:1 1 auto;margin-right:auto}
+.foot .count::before{content:"";width:6px;height:6px;border-radius:50%;background:#0D99FF;flex:none}
 .foot .count.zero{cursor:default}.foot .count.zero::before{background:#5A5A5A}
 .foot .count:hover{color:#fff}
-.foot .spacer{flex:1}
-.foot .rs{height:28px;background:#383838;color:#D4D4D4;border:none;border-radius:6px;padding:0 10px;cursor:pointer;font:11px 'Inter'}
+.foot .rs{height:28px;background:#383838;color:#D4D4D4;border:none;border-radius:6px;padding:0 10px;cursor:pointer;font-size:11px;white-space:nowrap}
 .foot .rs:hover{background:#4A4A4A}
-.foot .cp{height:28px;background:#0D99FF;color:#fff;border:none;border-radius:6px;padding:0 12px;cursor:pointer;font:600 11px 'Inter';display:flex;align-items:center;gap:6px}
+.foot .cp{height:28px;background:#0D99FF;color:#fff;border:none;border-radius:6px;padding:0 12px;cursor:pointer;font-weight:600;font-size:11px;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .foot .cp:hover{background:#3BA7FF}
 
 /* ---- changes drawer ---- */

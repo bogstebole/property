@@ -27,12 +27,15 @@ export const SCHEMA: GroupSchema[] = [
       { css: "z-index", control: "text", label: "z-index" },
     ],
   },
+  // Layout is custom-rendered in panel.ts (layoutSection) to match the Figma
+  // sub-grouping (Display / Flow / Dimensions / Min / Max / Overflow / Padding /
+  // Margin / Clip). The props here drive modified-count only.
   {
     group: "Layout",
     props: [
       { css: "display", control: "segmented", options: ["block", "flex", "grid", "inline", "none"] },
-      { css: "flex-direction", control: "segmented", options: ["row", "column", "row-reverse", "column-reverse"], showIf: isFlexOrGrid },
-      { css: "align", control: "align-grid", showIf: isFlexOrGrid },
+      { css: "flex-direction", control: "segmented", options: [], showIf: isFlexOrGrid },
+      { css: "flex-wrap", control: "segmented", options: [], showIf: isFlexOrGrid },
       { css: "gap", control: "length", family: "space", showIf: isFlexOrGrid },
       { css: "width", control: "length", label: "W" },
       { css: "height", control: "length", label: "H" },

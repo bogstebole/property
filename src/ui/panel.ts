@@ -15,9 +15,6 @@ export interface InspectorOptions {
   tokens?: TokenSource;
 }
 
-const JUSTIFY = ["flex-start", "center", "flex-end"];
-const ALIGN = ["flex-start", "center", "flex-end"];
-
 export class VisualQAInspector extends HTMLElement {
   readonly store = new InspectorStore();
   readonly resolver = new TokenResolver();
@@ -65,8 +62,15 @@ export class VisualQAInspector extends HTMLElement {
     const n = this.store.changeCount();
     this.launchEl.classList.toggle("active", !!active);
     this.launchEl.textContent = active ? "Esc to cancel" : n ? `Inspect · ${n}` : "Inspect";
-    // Shift the launcher clear of the panel/footer when the panel is open.
-    this.launchEl.style.right = this.store.selected ? "284px" : "20px";
+    // Move the launcher to the bottom-left when the panel is open so it never
+    // overlaps the panel footer or the changes drawer (both bottom-right).
+    if (this.store.selected) {
+      this.launchEl.style.left = "20px";
+      this.launchEl.style.right = "auto";
+    } else {
+      this.launchEl.style.left = "auto";
+      this.launchEl.style.right = "20px";
+    }
   }
 
   private renderPanel(): void {
@@ -80,7 +84,8 @@ export class VisualQAInspector extends HTMLElement {
 
     for (const group of SCHEMA) {
       if (group.showIf && !group.showIf(sel, cs)) continue;
-      this.panelEl.append(this.section(sel, group, cs));
+      if (group.group === "Layout") this.panelEl.append(this.layoutSection(sel, cs));
+      else this.panelEl.append(this.section(sel, group, cs));
     }
 
     this.panelEl.append(this.footer(sel));
@@ -154,10 +159,6 @@ export class VisualQAInspector extends HTMLElement {
         return wrapRow(this.colorField(elm, prop, cs));
       case "segmented":
         return this.segmented(elm, prop, cs);
-      case "align-grid":
-        return this.alignGrid(elm, cs);
-      case "spacing":
-        return this.spacing(elm, prop, cs);
       case "select":
         return wrapRow(this.selectField(elm, prop, cs));
       default:
@@ -261,89 +262,136 @@ export class VisualQAInspector extends HTMLElement {
     return row;
   }
 
-  // ---------- align grid ----------
-  private alignGrid(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
-    const row = el("div", "row one");
-    const ar = el("div", "alirow");
-    const grid = el("div", "grid9");
-    const j = Math.max(0, JUSTIFY.indexOf(cs.justifyContent));
-    const a = Math.max(0, ALIGN.indexOf(cs.alignItems));
-    for (let r = 0; r < 3; r++) {
-      for (let c = 0; c < 3; c++) {
-        const cell = document.createElement("i");
-        if (r === a && c === j) cell.classList.add("on");
-        cell.onclick = () => this.store.setMany(elm, { "justify-content": JUSTIFY[c], "align-items": ALIGN[r] });
-        grid.append(cell);
-      }
+  // ---------- Layout (custom, matches Figma 29:19) ----------
+  private layoutSection(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
+    const sec = el("div", "sec");
+    const head = el("div", "sech");
+    head.append(Object.assign(el("span", "t"), { textContent: "Layout" }));
+    const flat = ["display", "flex-direction", "flex-wrap", "gap", "width", "height", "min-width", "min-height", "max-width", "max-height", "overflow"];
+    const modCount =
+      flat.filter((p) => this.store.isModified(elm, p)).length +
+      this.spacingModified(elm, "padding") +
+      this.spacingModified(elm, "margin");
+    if (modCount) head.append(Object.assign(el("span", "badge"), { textContent: String(modCount) }));
+    sec.append(head);
+
+    // Display
+    sec.append(el("div", "lbl", "Display"));
+    sec.append(this.segmented(elm, { css: "display", control: "segmented", options: ["block", "flex", "grid", "inline", "none"] }, cs));
+
+    // Flow + Gap (only when flex/grid)
+    if (["flex", "inline-flex", "grid", "inline-grid"].includes(cs.display)) {
+      sec.append(el("div", "lbl", "Flow"));
+      sec.append(this.flowRow(elm, cs));
+      sec.append(wrapRow(this.lengthField(elm, { css: "gap", control: "length", label: "Gap", family: "space" }, cs)));
     }
-    ar.append(grid);
-    row.append(ar);
-    return row;
+
+    // Dimensions / Min / Max
+    sec.append(el("div", "lbl", "Dimensions"));
+    sec.append(pair(this.lengthField(elm, { css: "width", control: "length", label: "W" }, cs), this.lengthField(elm, { css: "height", control: "length", label: "H" }, cs)));
+    sec.append(el("div", "lbl", "Min size"));
+    sec.append(pair(this.lengthField(elm, { css: "min-width", control: "length", label: "W", family: "size" }, cs), this.lengthField(elm, { css: "min-height", control: "length", label: "H", family: "size" }, cs)));
+    sec.append(el("div", "lbl", "Max size"));
+    sec.append(pair(this.lengthField(elm, { css: "max-width", control: "length", label: "W", family: "size" }, cs), this.lengthField(elm, { css: "max-height", control: "length", label: "H", family: "size" }, cs)));
+
+    // Overflow
+    sec.append(el("div", "lbl", "Overflow"));
+    sec.append(wrapRow(this.selectField(elm, { css: "overflow", control: "select", options: ["visible", "hidden", "scroll", "auto", "clip"] }, cs)));
+
+    // Padding / Margin
+    sec.append(this.spacingGroup(elm, "padding", cs));
+    sec.append(this.spacingGroup(elm, "margin", cs));
+
+    // Clip content
+    const chk = el("label", "chk");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = ["hidden", "clip"].includes(cs.overflow);
+    cb.onchange = () => this.store.setProp(elm, "overflow", cb.checked ? "hidden" : "visible");
+    chk.append(cb, Object.assign(document.createElement("span"), { textContent: "Clip content" }));
+    sec.append(chk);
+    return sec;
   }
 
-  // ---------- spacing (padding / margin) ----------
+  private flowRow(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
+    const wrapEl = el("div", "flow");
+    const dir = el("div", "dir");
+    const dirs: Array<[string, string]> = [["row", "→"], ["column", "↓"], ["row-reverse", "←"], ["column-reverse", "↑"]];
+    for (const [val, ic] of dirs) {
+      const b = document.createElement("button");
+      b.textContent = ic;
+      if (cs.flexDirection === val) b.classList.add("on");
+      b.onclick = () => this.store.setProp(elm, "flex-direction", val);
+      dir.append(b);
+    }
+    const wbtn = document.createElement("button");
+    wbtn.className = "wrapbtn";
+    wbtn.textContent = "⤶";
+    wbtn.title = "Wrap";
+    if (cs.flexWrap === "wrap") wbtn.classList.add("on");
+    wbtn.onclick = () => this.store.setProp(elm, "flex-wrap", cs.flexWrap === "wrap" ? "nowrap" : "wrap");
+    wrapEl.append(dir, wbtn);
+    return wrapEl;
+  }
+
   private spacingModified(elm: HTMLElement, base: string): number {
     return ["top", "right", "bottom", "left"].filter((s) => this.store.isModified(elm, `${base}-${s}`)).length;
   }
 
-  private spacing(elm: HTMLElement, prop: PropSchema, cs: CSSStyleDeclaration): HTMLElement {
-    const base = prop.css;
+  private spacingGroup(elm: HTMLElement, base: string, cs: CSSStyleDeclaration): HTMLElement {
     const wrapEl = document.createElement("div");
-    const head = el("div", "lbl");
-    head.style.display = "flex";
-    head.style.alignItems = "center";
-    head.append(document.createTextNode(base));
-    const toggle = el("span", "spacing-toggle");
-    toggle.textContent = "⊞";
+    wrapEl.append(el("div", "lbl", base[0].toUpperCase() + base.slice(1)));
     const expanded = this.perSide.has(base);
-    if (expanded) toggle.classList.add("on");
-    toggle.onclick = () => {
-      if (expanded) this.perSide.delete(base);
-      else this.perSide.add(base);
-      this.render();
+    const gear = () => {
+      const g = el("span", "gear" + (expanded ? " on" : ""));
+      g.textContent = "⊞";
+      g.title = "Edit each side";
+      g.onclick = () => {
+        expanded ? this.perSide.delete(base) : this.perSide.add(base);
+        this.render();
+      };
+      return g;
     };
-    head.append(toggle);
-    wrapEl.append(head);
-
-    const sideField = (side: string, glyph: string) => {
-      const css = `${base}-${side}`;
-      const cur = cs.getPropertyValue(css).trim();
-      const f = el("div", "field");
-      if (this.store.isModified(elm, css)) f.classList.add("mod");
-      f.append(Object.assign(el("span", "gl"), { textContent: glyph }));
-      const input = document.createElement("input");
-      input.value = cur;
-      input.onchange = () => this.commit(elm, { css, family: prop.family, control: "length" }, input.value);
-      f.append(input);
-      if (this.store.isModified(elm, css)) f.append(this.revert(elm, css));
-      return f;
-    };
+    const side = (s: string, glyph: string) =>
+      this.lengthField(elm, { css: `${base}-${s}`, control: "length", label: glyph, family: "space" }, cs);
 
     if (!expanded) {
-      const row = el("div", "row");
-      // X = left/right, Y = top/bottom
-      const xf = el("div", "field");
-      xf.append(Object.assign(el("span", "gl"), { textContent: "↔" }));
-      const xi = document.createElement("input");
-      xi.value = cs.getPropertyValue(`${base}-left`).trim();
-      xi.onchange = () => this.commitMany(elm, [`${base}-left`, `${base}-right`], prop.family, xi.value);
-      xf.append(xi);
-      const yf = el("div", "field");
-      yf.append(Object.assign(el("span", "gl"), { textContent: "↕" }));
-      const yi = document.createElement("input");
-      yi.value = cs.getPropertyValue(`${base}-top`).trim();
-      yi.onchange = () => this.commitMany(elm, [`${base}-top`, `${base}-bottom`], prop.family, yi.value);
-      yf.append(yi);
-      row.append(xf, yf);
+      const row = el("div", "row with-gear");
+      row.append(this.axisField(elm, base, "left", "right", "↔", cs), this.axisField(elm, base, "top", "bottom", "↕", cs), gear());
       wrapEl.append(row);
     } else {
-      const r1 = el("div", "row");
-      r1.append(sideField("top", "T"), sideField("right", "R"));
+      const r1 = el("div", "row with-gear");
+      r1.append(side("top", "T"), side("right", "R"), gear());
       const r2 = el("div", "row");
-      r2.append(sideField("bottom", "B"), sideField("left", "L"));
+      r2.append(side("bottom", "B"), side("left", "L"));
       wrapEl.append(r1, r2);
     }
     return wrapEl;
+  }
+
+  private axisField(elm: HTMLElement, base: string, a: string, b: string, glyph: string, cs: CSSStyleDeclaration): HTMLElement {
+    const cssA = `${base}-${a}`;
+    const cssB = `${base}-${b}`;
+    const mod = this.store.isModified(elm, cssA) || this.store.isModified(elm, cssB);
+    const f = el("div", "field");
+    if (mod) f.classList.add("mod");
+    f.append(Object.assign(el("span", "gl"), { textContent: glyph }));
+    const input = document.createElement("input");
+    input.value = cs.getPropertyValue(cssA).trim();
+    input.placeholder = "–";
+    input.onchange = () => this.commitMany(elm, [cssA, cssB], "space", input.value);
+    f.append(input);
+    if (mod) {
+      const r = el("span", "revert");
+      r.textContent = "↺";
+      r.title = "Reset to original";
+      r.onclick = () => {
+        this.store.revertProp(elm, cssA);
+        this.store.revertProp(elm, cssB);
+      };
+      f.append(r);
+    }
+    return f;
   }
 
   // ---------- footer ----------
@@ -505,6 +553,11 @@ function el(tag: string, cls = "", html?: string): HTMLDivElement {
 function wrapRow(field: HTMLElement): HTMLElement {
   const row = el("div", "row one");
   row.append(field);
+  return row;
+}
+function pair(a: HTMLElement, b: HTMLElement): HTMLElement {
+  const row = el("div", "row");
+  row.append(a, b);
   return row;
 }
 function prettyTok(name: string): string {
