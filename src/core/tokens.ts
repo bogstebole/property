@@ -132,17 +132,22 @@ export class TokenResolver {
   }
 
   private buildReverseMaps(): void {
+    // Key by family + value so the same value in two families (e.g. 16px as
+    // --space-4 and --font-size-base) resolves to the family-correct token.
     for (const t of this.tokens) {
-      const key = t.family === "color" ? normColor(t.value) : t.value.trim();
+      const key = this.valueKey(t.value, t.family);
       if (!this.valueToToken.has(key)) this.valueToToken.set(key, t.name);
       if (t.className) this.classToToken.set(t.className, t.name);
     }
   }
 
+  private valueKey(value: string, family: TokenFamily): string {
+    return `${family}|${family === "color" ? normColor(value) : value.trim()}`;
+  }
+
   /** Token name for a computed value, or null. */
   nameForValue(value: string, family: TokenFamily): string | null {
-    const key = family === "color" ? normColor(value) : value.trim();
-    return this.valueToToken.get(key) ?? null;
+    return this.valueToToken.get(this.valueKey(value, family)) ?? null;
   }
 
   /** Token name for a class (Tailwind path), or null. */

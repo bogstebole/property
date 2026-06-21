@@ -24,10 +24,18 @@ export interface Edit {
 export type EditMap = Record<string, Edit>;
 
 /** Control kinds the panel can render for a property. */
-export type ControlKind = "length" | "color" | "select" | "text";
+export type ControlKind =
+  | "length" // number + unit, bindable
+  | "color" // swatch + value, bindable
+  | "select" // dropdown
+  | "segmented" // inline button group
+  | "checkbox" // boolean toggle
+  | "align-grid" // 3x3 justify x align
+  | "spacing" // padding/margin: x/y pair + per-side toggle
+  | "text"; // free value (line-height, opacity, shadow…)
 
 export interface PropSchema {
-  /** CSS property name, e.g. "padding-top". */
+  /** CSS property name, e.g. "padding-top". For "spacing" the base, e.g. "padding". */
   css: string;
   control: ControlKind;
   options?: string[];
@@ -35,9 +43,16 @@ export interface PropSchema {
   family?: TokenFamily;
   /** Display label; defaults to css. */
   label?: string;
+  /** Optional condition gating visibility of this single prop. */
+  showIf?: (el: HTMLElement, cs: CSSStyleDeclaration) => boolean;
 }
 
 export interface GroupSchema {
+  /** Rendered section title (web-QA label: Layout, Typography, …). */
   group: string;
   props: PropSchema[];
+  /** Optional condition gating the whole section. */
+  showIf?: (el: HTMLElement, cs: CSSStyleDeclaration) => boolean;
+  /** Header shows a `+` affordance (Background/Border/Effects). */
+  addable?: boolean;
 }

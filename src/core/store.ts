@@ -76,12 +76,44 @@ export class InspectorStore {
     for (const [prop, to] of Object.entries(values)) this.setProp(el, prop, to);
   }
 
+  /** Whether a single property has an effective change. */
+  isModified(el: HTMLElement, prop: string): boolean {
+    const e = this.edits.get(el)?.[prop];
+    return !!e && e.from !== e.to;
+  }
+
+  /** Count of modified properties on one element. */
+  modifiedCount(el: HTMLElement): number {
+    const map = this.edits.get(el);
+    if (!map) return 0;
+    return Object.values(map).filter((e) => e.from !== e.to).length;
+  }
+
+  /** Revert a single property to its original value. */
+  revertProp(el: HTMLElement, prop: string): void {
+    const map = this.edits.get(el);
+    if (!map || !(prop in map)) return;
+    el.style.removeProperty(prop);
+    delete map[prop];
+    if (Object.keys(map).length === 0) this.edits.delete(el);
+    this.notify();
+  }
+
   /** Remove all edits for an element and restore inline styles. */
   reset(el: HTMLElement): void {
     const map = this.edits.get(el);
     if (!map) return;
     for (const prop of Object.keys(map)) el.style.removeProperty(prop);
     this.edits.delete(el);
+    this.notify();
+  }
+
+  /** Reset every edited element across the session. */
+  resetAll(): void {
+    for (const [el, map] of this.edits) {
+      for (const prop of Object.keys(map)) el.style.removeProperty(prop);
+    }
+    this.edits.clear();
     this.notify();
   }
 
