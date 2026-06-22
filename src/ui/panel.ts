@@ -102,9 +102,16 @@ export class VisualQAInspector extends HTMLElement {
     const { tag, classes } = elementContext(elm);
     const box = el("div", "ident");
 
+    const top = el("div", "ident-top");
     const tagline = el("div", "tagline");
     tagline.innerHTML = `&lt;${tag}&gt; ` + classes.map((c) => `<span class="cls">.${c}</span>`).join(" ");
-    box.append(tagline);
+    const pick = el("span", "pickbtn");
+    pick.title = "Select another element";
+    pick.innerHTML =
+      '<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><circle cx=7 cy=7 r=4 stroke="currentColor" stroke-width="1.3"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+    pick.onclick = () => this.picker.toggle(true);
+    top.append(tagline, pick);
+    box.append(top);
 
     // breadcrumb of ancestors
     const chain: HTMLElement[] = [];
@@ -457,11 +464,15 @@ export class VisualQAInspector extends HTMLElement {
   private footer(elm: HTMLElement): HTMLElement {
     const foot = el("div", "foot");
     const n = this.store.changeCount();
+
+    // "N changes" row (above the buttons; click opens the drawer)
     const count = el("div", "count" + (n ? "" : " zero"));
     count.textContent = `${n} change${n === 1 ? "" : "s"}`;
     if (n) count.onclick = () => { this.drawerOpen = !this.drawerOpen; this.render(); };
-    foot.append(count, el("div", "spacer"));
+    foot.append(count);
 
+    // Reset + Copy, inline
+    const btns = el("div", "foot-btns");
     const rs = document.createElement("button");
     rs.className = "rs";
     rs.textContent = "Reset element";
@@ -475,7 +486,8 @@ export class VisualQAInspector extends HTMLElement {
       cp.querySelector("span")!.textContent = "Copied ✓";
       setTimeout(() => (cp.querySelector("span")!.textContent = "Copy config"), 1200);
     };
-    foot.append(rs, cp);
+    btns.append(rs, cp);
+    foot.append(btns);
     return foot;
   }
 

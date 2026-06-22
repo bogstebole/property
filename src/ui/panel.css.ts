@@ -20,6 +20,11 @@ export const PANEL_CSS = `
 
 /* ---- header / identity ---- */
 .ident{padding:11px 12px 9px;border-bottom:1px solid #1B1B1B;position:sticky;top:0;background:#2C2C2C;z-index:3}
+.ident-top{display:flex;align-items:center;gap:8px}
+.ident-top .tagline{flex:1;min-width:0}
+.pickbtn{flex:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:5px;
+  background:#383838;color:#9C9C9C;cursor:pointer}
+.pickbtn:hover{background:#0D99FF;color:#fff}
 .ident .tagline{font:12px/1.3 'Geist Mono',ui-monospace,monospace;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ident .tagline .cls{color:#4DA8FF}
 .ident .crumb{font:10px/1.4 'Geist Mono',ui-monospace,monospace;color:#7A7A7A;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -124,17 +129,18 @@ export const PANEL_CSS = `
 /* empty addable section */
 .addrow{color:#7A7A7A;font-size:11px;padding:2px 0}
 
-/* ---- footer (wraps to stack when it can't fit inline) ---- */
+/* ---- footer: "N changes" above, Reset + Copy inline below ---- */
 .foot{position:sticky;bottom:0;background:#262626;border-top:1px solid #1B1B1B;padding:9px 12px;
-  display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end}
-.foot .count{font-size:11px;color:#9C9C9C;display:flex;align-items:center;gap:6px;cursor:pointer;flex:1 1 auto;margin-right:auto}
+  display:flex;flex-direction:column;gap:8px}
+.foot .count{font-size:11px;color:#9C9C9C;display:flex;align-items:center;gap:6px;cursor:pointer}
 .foot .count::before{content:"";width:6px;height:6px;border-radius:50%;background:#0D99FF;flex:none}
 .foot .count.zero{cursor:default}.foot .count.zero::before{background:#5A5A5A}
 .foot .count:hover{color:#fff}
-.foot .rs{height:28px;background:#383838;color:#D4D4D4;border:none;border-radius:6px;padding:0 10px;cursor:pointer;font-size:11px;white-space:nowrap}
-.foot .rs:hover{background:#4A4A4A}
-.foot .cp{height:28px;background:#0D99FF;color:#fff;border:none;border-radius:6px;padding:0 12px;cursor:pointer;font-weight:600;font-size:11px;display:flex;align-items:center;gap:6px;white-space:nowrap}
-.foot .cp:hover{background:#3BA7FF}
+.foot-btns{display:flex;gap:8px}
+.foot-btns .rs{flex:none;height:30px;background:#383838;color:#D4D4D4;border:none;border-radius:6px;padding:0 12px;cursor:pointer;font-size:11px;white-space:nowrap}
+.foot-btns .rs:hover{background:#4A4A4A}
+.foot-btns .cp{flex:1;height:30px;background:#0D99FF;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:11px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.foot-btns .cp:hover{background:#3BA7FF}
 
 /* ---- changes drawer ---- */
 .drawer{position:fixed;right:264px;bottom:0;width:300px;max-height:60vh;z-index:2147483641;
