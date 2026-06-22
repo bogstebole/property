@@ -1,6 +1,6 @@
 {
   "name": "visual-qa-inspector",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Visual QA tool: select any element on a running app, edit it with real design tokens, and copy a precise handoff prompt for an AI agent or dev.",
   "type": "module",
   "main": "./dist/index.js",
