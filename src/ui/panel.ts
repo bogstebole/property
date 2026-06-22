@@ -361,7 +361,7 @@ export class VisualQAInspector extends HTMLElement {
 
     // Dimensions / Min / Max
     sec.append(el("div", "lbl", "Dimensions"));
-    sec.append(pair(this.lengthField(elm, { css: "width", control: "length", label: "W" }, cs), this.lengthField(elm, { css: "height", control: "length", label: "H" }, cs)));
+    sec.append(pair(this.dimField(elm, "width", "W"), this.dimField(elm, "height", "H")));
     sec.append(el("div", "lbl", "Min size"));
     sec.append(pair(this.lengthField(elm, { css: "min-width", control: "length", label: "W", family: "size" }, cs), this.lengthField(elm, { css: "min-height", control: "length", label: "H", family: "size" }, cs)));
     sec.append(el("div", "lbl", "Max size"));
@@ -464,6 +464,23 @@ export class VisualQAInspector extends HTMLElement {
       };
       f.append(r);
     }
+    return f;
+  }
+
+  // Dimension field: show the rendered box size when computed width/height is
+  // "auto" (inline elements), so a real size always shows — like Figma.
+  private dimField(elm: HTMLElement, css: "width" | "height", label: string): HTMLElement {
+    const modified = this.store.isModified(elm, css);
+    const f = el("div", "field" + (modified ? " mod" : ""));
+    f.append(Object.assign(el("span", "gl"), { textContent: label }));
+    const computed = getComputedStyle(elm).getPropertyValue(css).trim();
+    const rect = elm.getBoundingClientRect();
+    const rendered = Math.round((css === "width" ? rect.width : rect.height) * 100) / 100;
+    const input = document.createElement("input");
+    input.value = /^[\d.]+px$/.test(computed) ? computed : rendered + "px";
+    input.onchange = () => this.store.setProp(elm, css, input.value);
+    f.append(input);
+    if (modified) f.append(this.revert(elm, css));
     return f;
   }
 
