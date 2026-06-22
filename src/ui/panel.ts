@@ -29,6 +29,7 @@ export class VisualQAInspector extends HTMLElement {
   private perSide = new Set<string>(); // which spacing controls are expanded
   private colorPicker: ColorPicker | null = null;
   private varPopover: VarPopover | null = null;
+  private bgTab: "color" | "gradient" | "image" = "color";
 
   connectedCallback(): void {
     ensureFonts();
@@ -86,15 +87,19 @@ export class VisualQAInspector extends HTMLElement {
     if (!sel) return;
 
     const cs = getComputedStyle(sel);
-    this.panelEl.append(this.header(sel));
+    const body = el("div", "panel-body");
+    body.append(this.header(sel));
 
     for (const group of SCHEMA) {
       if (group.showIf && !group.showIf(sel, cs)) continue;
-      if (group.group === "Layout") this.panelEl.append(this.layoutSection(sel, cs));
-      else this.panelEl.append(this.section(sel, group, cs));
+      if (group.group === "Layout") body.append(this.layoutSection(sel, cs));
+      else if (group.group === "Appearance") body.append(this.appearanceSection(sel, cs));
+      else if (group.group === "Background") body.append(this.backgroundSection(sel, cs));
+      else if (group.group === "Border") body.append(this.borderSection(sel, cs));
+      else body.append(this.section(sel, group, cs));
     }
 
-    this.panelEl.append(this.footer(sel));
+    this.panelEl.append(body, this.footer(sel));
   }
 
   // ---------- header ----------
@@ -188,7 +193,8 @@ export class VisualQAInspector extends HTMLElement {
     if (modified) f.classList.add("mod");
     if (bound) f.classList.add("bound");
 
-    f.append(Object.assign(el("span", "gl"), { textContent: prop.label ?? prop.css }));
+    const lab = prop.label ?? prop.css;
+    if (lab !== "") f.append(Object.assign(el("span", "gl"), { textContent: lab }));
 
     if (bound) {
       f.append(Object.assign(el("span", "tok"), { textContent: prettyTok(bound) }));
@@ -251,7 +257,8 @@ export class VisualQAInspector extends HTMLElement {
     const modified = this.store.isModified(elm, prop.css);
     const f = el("div", "field");
     if (modified) f.classList.add("mod");
-    f.append(Object.assign(el("span", "gl"), { textContent: prop.label ?? prop.css }));
+    const lab = prop.label ?? prop.css;
+    if (lab !== "") f.append(Object.assign(el("span", "gl"), { textContent: lab }));
 
     // select with no options → free text (e.g. font-family)
     if (!prop.options || prop.options.length === 0) {
@@ -460,6 +467,229 @@ export class VisualQAInspector extends HTMLElement {
     return f;
   }
 
+  // ---------- Appearance (Opacity | Corner radius, labels above) ----------
+  private appearanceSection(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
+    const sec = el("div", "sec");
+    const mod = ["opacity", "border-radius"].filter((p) => this.store.isModified(elm, p)).length;
+    sec.append(this.sechEl("Appearance", mod));
+    const row = el("div", "row");
+    const c1 = el("div", "apcol");
+    c1.append(this.lblDot("Opacity", this.store.isModified(elm, "opacity")), this.opacityField(elm, cs));
+    const c2 = el("div", "apcol");
+    c2.append(this.lblDot("Corner radius", this.store.isModified(elm, "border-radius")), this.lengthField(elm, { css: "border-radius", control: "length", label: "", family: "radius" }, cs));
+    row.append(c1, c2);
+    sec.append(row);
+    return sec;
+  }
+
+  private opacityField(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
+    const modified = this.store.isModified(elm, "opacity");
+    const f = el("div", "field" + (modified ? " mod" : ""));
+    const input = document.createElement("input");
+    input.value = Math.round(parseFloat(cs.opacity) * 100) + "%";
+    input.onchange = () => {
+      const n = parseFloat(input.value);
+      this.store.setProp(elm, "opacity", String(isNaN(n) ? 1 : Math.min(100, Math.max(0, n)) / 100));
+    };
+    f.append(input);
+    if (modified) f.append(this.revert(elm, "opacity"));
+    return f;
+  }
+
+  // ---------- Background (Color / Gradient / Image tabs) ----------
+  private backgroundSection(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
+    const sec = el("div", "sec");
+    const mod = ["background-color", "background-image"].filter((p) => this.store.isModified(elm, p)).length;
+    sec.append(this.sechEl("Background", mod, true));
+    const tabs = el("div", "bgtabs");
+    (["color", "gradient", "image"] as const).forEach((t) => {
+      const b = document.createElement("button");
+      b.textContent = t[0].toUpperCase() + t.slice(1);
+      if (this.bgTab === t) b.className = "on";
+      b.onclick = () => { this.bgTab = t; this.render(); };
+      tabs.append(b);
+    });
+    sec.append(tabs);
+
+    if (this.bgTab === "color") {
+      sec.append(this.paintRow(elm, "background-color", { eye: true }));
+    } else if (this.bgTab === "gradient") {
+      sec.append(this.gradientEditor(elm));
+    } else {
+      sec.append(this.imageEditor(elm, cs));
+    }
+    return sec;
+  }
+
+  private gradientEditor(elm: HTMLElement): HTMLElement {
+    const g = readGrad(elm);
+    const wrap = document.createElement("div");
+    const seg = el("div", "seg");
+    for (const t of ["linear", "radial"] as const) {
+      const b = document.createElement("button");
+      b.textContent = t;
+      if (g.type === t) b.classList.add("on");
+      b.onclick = () => { g.type = t; this.writeGrad(elm, g); };
+      seg.append(b);
+    }
+    const segRow = el("div", "row one");
+    segRow.append(seg);
+    wrap.append(segRow);
+    if (g.type === "linear") {
+      const f = el("div", "field");
+      f.append(Object.assign(el("span", "gl"), { textContent: "∠" }));
+      const i = document.createElement("input");
+      i.value = g.angle;
+      i.onchange = () => { g.angle = i.value; this.writeGrad(elm, g); };
+      f.append(i);
+      wrap.append(wrapRow(f));
+    }
+    g.stops.forEach((stop, idx) => {
+      const f = el("div", "fill");
+      f.style.cursor = "pointer";
+      const sw = el("div", "sw");
+      sw.style.background = stop;
+      f.append(sw, Object.assign(el("div", "nm"), { textContent: stop }));
+      f.onclick = () =>
+        this.openColorAt(f, stop, "custom",
+          (css) => { g.stops[idx] = css; this.writeGrad(elm, g); },
+          (t) => { g.stops[idx] = t.name.startsWith("--") ? `var(${t.name})` : t.value; this.writeGrad(elm, g); });
+      wrap.append(f);
+    });
+    return wrap;
+  }
+
+  private writeGrad(elm: HTMLElement, g: Grad): void {
+    elm.dataset.vqiGrad = JSON.stringify(g);
+    const grad = g.type === "linear"
+      ? `linear-gradient(${g.angle}, ${g.stops[0]}, ${g.stops[1]})`
+      : `radial-gradient(circle, ${g.stops[0]}, ${g.stops[1]})`;
+    this.store.setProp(elm, "background-image", grad);
+    this.render();
+  }
+
+  private imageEditor(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
+    const wrap = document.createElement("div");
+    const uf = el("div", "field");
+    uf.append(Object.assign(el("span", "gl"), { textContent: "URL" }));
+    const i = document.createElement("input");
+    const cur = cs.backgroundImage;
+    i.value = cur && cur !== "none" ? cur.replace(/^url\(["']?|["']?\)$/g, "") : "";
+    i.placeholder = "https://…";
+    i.onchange = () => this.store.setProp(elm, "background-image", i.value ? `url("${i.value}")` : "none");
+    uf.append(i);
+    wrap.append(wrapRow(uf));
+    wrap.append(el("div", "lbl", "Size"));
+    wrap.append(wrapRow(this.selectField(elm, { css: "background-size", control: "select", options: ["auto", "cover", "contain"] }, cs)));
+    wrap.append(el("div", "lbl", "Position"));
+    wrap.append(wrapRow(this.selectField(elm, { css: "background-position", control: "select", options: ["center", "top", "bottom", "left", "right"] }, cs)));
+    wrap.append(el("div", "lbl", "Repeat"));
+    wrap.append(wrapRow(this.selectField(elm, { css: "background-repeat", control: "select", options: ["no-repeat", "repeat", "repeat-x", "repeat-y"] }, cs)));
+    return wrap;
+  }
+
+  // ---------- Border (color row + style/width/gear) ----------
+  private borderSection(elm: HTMLElement, cs: CSSStyleDeclaration): HTMLElement {
+    const sec = el("div", "sec");
+    const mod = ["border-color", "border-style", "border-width", "border-top-width"].filter((p) => this.store.isModified(elm, p)).length;
+    sec.append(this.sechEl("Border", mod, true, () => { this.store.setMany(elm, { "border-style": "solid", "border-width": "1px" }); this.render(); }));
+
+    const hasBorder = parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== "none";
+    if (!hasBorder) {
+      sec.append(Object.assign(el("div", "addrow"), { textContent: "No border — click + to add" }));
+      return sec;
+    }
+
+    sec.append(this.paintRow(elm, "border-color", {
+      eye: true,
+      minus: true,
+      onRemove: () => { this.store.setMany(elm, { "border-style": "none", "border-width": "0px" }); this.render(); },
+    }));
+
+    const expanded = this.perSide.has("border");
+    const row = el("div", "row with-gear");
+    row.append(this.selectField(elm, { css: "border-style", control: "select", options: ["none", "solid", "dashed", "dotted"], label: "" }, cs));
+    row.append(this.lengthField(elm, { css: "border-width", control: "length", label: "≡" }, cs));
+    const gear = el("span", "gear" + (expanded ? " on" : ""));
+    gear.textContent = "⊞";
+    gear.title = "Edit each side";
+    gear.onclick = () => { expanded ? this.perSide.delete("border") : this.perSide.add("border"); this.render(); };
+    row.append(gear);
+    sec.append(row);
+
+    if (expanded) {
+      const r1 = el("div", "row");
+      r1.append(this.lengthField(elm, { css: "border-top-width", control: "length", label: "T" }, cs), this.lengthField(elm, { css: "border-right-width", control: "length", label: "R" }, cs));
+      const r2 = el("div", "row");
+      r2.append(this.lengthField(elm, { css: "border-bottom-width", control: "length", label: "B" }, cs), this.lengthField(elm, { css: "border-left-width", control: "length", label: "L" }, cs));
+      sec.append(r1, r2);
+    }
+    return sec;
+  }
+
+  // ---------- a paint row (swatch + token + ◇ + eye/minus) ----------
+  private paintRow(elm: HTMLElement, css: string, opts: { eye?: boolean; minus?: boolean; onRemove?: () => void }): HTMLElement {
+    const prop: PropSchema = { css, control: "color", family: "color" };
+    const cs = getComputedStyle(elm);
+    const current = cs.getPropertyValue(css).trim();
+    const modified = this.store.isModified(elm, css);
+    const bound = this.boundToken(elm, prop, current);
+    const f = el("div", "fill");
+    if (modified) f.classList.add("mod");
+    if (bound) f.classList.add("bound");
+    f.style.cursor = "pointer";
+    const sw = el("div", "sw");
+    sw.style.background = current;
+    f.append(sw, Object.assign(el("div", "nm"), { textContent: bound ? prettyTok(bound) : toHex(current) }));
+    f.onclick = (e) => {
+      if ((e.target as HTMLElement).closest(".dia,.eye,.minus")) return;
+      this.openColor(elm, prop, f, current, "custom");
+    };
+    const dia = el("span", "dia");
+    dia.textContent = "◇";
+    dia.onclick = (e) => { e.stopPropagation(); this.openColor(elm, prop, f, current, "variables"); };
+    f.append(dia);
+    if (opts.eye) {
+      const eye = el("span", "eye");
+      eye.innerHTML = EYE_SVG;
+      eye.title = "Toggle visibility";
+      eye.onclick = (e) => {
+        e.stopPropagation();
+        const v = cs.getPropertyValue(css).trim();
+        if (/rgba?\(0, 0, 0, 0\)|transparent/.test(v) && modified) this.store.revertProp(elm, css);
+        else this.store.setProp(elm, css, "transparent");
+      };
+      f.append(eye);
+    }
+    if (opts.minus) {
+      const m = el("span", "minus");
+      m.innerHTML = MINUS_SVG;
+      m.title = "Remove";
+      m.onclick = (e) => { e.stopPropagation(); opts.onRemove?.(); };
+      f.append(m);
+    }
+    if (modified) f.append(this.revert(elm, css));
+    return f;
+  }
+
+  // section header helper
+  private sechEl(title: string, modCount: number, addable = false, onAdd?: () => void): HTMLElement {
+    const head = el("div", "sech");
+    head.append(Object.assign(el("span", "t"), { textContent: title }));
+    if (modCount) head.append(Object.assign(el("span", "badge"), { textContent: String(modCount) }));
+    if (addable) {
+      const a = el("span", "add");
+      a.textContent = "+";
+      if (onAdd) a.onclick = onAdd;
+      head.append(a);
+    }
+    return head;
+  }
+
+  private lblDot(text: string, mod: boolean): HTMLElement {
+    return Object.assign(el("div", "lbl" + (mod ? " moddot" : "")), { textContent: text });
+  }
+
   // ---------- footer ----------
   private footer(elm: HTMLElement): HTMLElement {
     const foot = el("div", "foot");
@@ -467,8 +697,13 @@ export class VisualQAInspector extends HTMLElement {
 
     // "N changes" row (above the buttons; click opens the drawer)
     const count = el("div", "count" + (n ? "" : " zero"));
-    count.textContent = `${n} change${n === 1 ? "" : "s"}`;
-    if (n) count.onclick = () => { this.drawerOpen = !this.drawerOpen; this.render(); };
+    count.append(Object.assign(el("span", "count-txt"), { textContent: `${n} change${n === 1 ? "" : "s"}` }));
+    if (n) {
+      const chev = el("span", "count-chev");
+      chev.textContent = this.drawerOpen ? "⌃" : "⌄";
+      count.append(chev);
+      count.onclick = () => { this.drawerOpen = !this.drawerOpen; this.render(); };
+    }
     foot.append(count);
 
     // Reset + Copy, inline
@@ -544,6 +779,12 @@ export class VisualQAInspector extends HTMLElement {
 
   // ---------- color picker ----------
   private openColor(elm: HTMLElement, prop: PropSchema, anchor: HTMLElement, current: string, tab: "custom" | "variables"): void {
+    this.openColorAt(anchor, current, tab,
+      (css) => this.store.setProp(elm, prop.css, css),
+      (t) => this.bind(elm, prop.css, t.name));
+  }
+
+  private openColorAt(anchor: HTMLElement, current: string, tab: "custom" | "variables", onPick: (css: string) => void, onBind: (t: import("../core/types").Token) => void): void {
     this.colorPicker?.close();
     this.colorPicker = new ColorPicker({
       mount: this.shadowRoot!.querySelector(".wrap") as HTMLElement,
@@ -551,8 +792,8 @@ export class VisualQAInspector extends HTMLElement {
       value: current,
       tab,
       tokens: this.resolver.allTokens("color"),
-      onPick: (css) => this.store.setProp(elm, prop.css, css),
-      onBind: (t) => this.bind(elm, prop.css, t.name),
+      onPick,
+      onBind,
       onClose: () => { this.colorPicker = null; },
     });
   }
@@ -645,6 +886,21 @@ function pair(a: HTMLElement, b: HTMLElement): HTMLElement {
   row.append(a, b);
   return row;
 }
+interface Grad { type: "linear" | "radial"; angle: string; stops: string[]; }
+function readGrad(elm: HTMLElement): Grad {
+  try {
+    const g = JSON.parse(elm.dataset.vqiGrad ?? "");
+    if (g && Array.isArray(g.stops)) return g;
+  } catch {
+    /* none yet */
+  }
+  return { type: "linear", angle: "90deg", stops: ["#6d5efc", "#8b5cf6"] };
+}
+const EYE_SVG =
+  '<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" stroke="currentColor" stroke-width="1.1"/><circle cx=7 cy=7 r=1.6 stroke="currentColor" stroke-width="1.1"/></svg>';
+const MINUS_SVG =
+  '<svg width=13 height=13 viewBox="0 0 14 14" fill="none"><path d="M3 7h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+
 function prettyTok(name: string): string {
   return name.replace(/^var\(|\)$/g, "").replace(/^--/, "").replace(/\./g, "/").replace("-", "/");
 }

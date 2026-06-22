@@ -10,13 +10,14 @@ export const PANEL_CSS = `
 *{box-sizing:border-box}
 .wrap{font-family:${FONT_STACK};font-size:11px;line-height:1.45;color:#EAEAEA}
 
-/* ---- shell ---- */
+/* ---- shell (scrollable body + always-pinned footer) ---- */
 .panel{position:fixed;top:0;right:0;height:100vh;width:264px;z-index:2147483641;
-  background:#2C2C2C;border-left:1px solid #000;overflow-y:auto;
+  background:#2C2C2C;border-left:1px solid #000;display:flex;flex-direction:column;
   transform:translateX(100%);transition:transform .18s ease}
 .panel.open{transform:translateX(0)}
-.panel::-webkit-scrollbar{width:9px}
-.panel::-webkit-scrollbar-thumb{background:#454545;border-radius:5px;border:2px solid #2C2C2C}
+.panel-body{flex:1;min-height:0;overflow-y:auto}
+.panel-body::-webkit-scrollbar{width:9px}
+.panel-body::-webkit-scrollbar-thumb{background:#454545;border-radius:5px;border:2px solid #2C2C2C}
 
 /* ---- header / identity ---- */
 .ident{padding:11px 12px 9px;border-bottom:1px solid #1B1B1B;position:sticky;top:0;background:#2C2C2C;z-index:3}
@@ -97,6 +98,19 @@ export const PANEL_CSS = `
 .fill.bound .nm{color:#CFE6FF}
 .fill .dia{color:#0D99FF;cursor:pointer;flex:none;font-size:12px;line-height:1;padding:0 2px;border-radius:3px}
 .fill .dia:hover{background:rgba(13,153,255,.2)}
+.fill .eye,.fill .minus{flex:none;color:#8C8C8C;cursor:pointer;display:flex;align-items:center;padding:0 2px;border-radius:3px}
+.fill .eye:hover,.fill .minus:hover{color:#fff;background:#555}
+
+/* background tabs */
+.bgtabs{display:flex;background:#1E1E1E;border-radius:6px;padding:2px;gap:2px;margin:5px 0}
+.bgtabs button{flex:1;height:24px;border:none;background:none;color:#9C9C9C;border-radius:4px;cursor:pointer;font:11px 'Geist';font-family:${FONT_STACK}}
+.bgtabs button:hover{color:#fff}
+.bgtabs button.on{background:#3A3A3A;color:#fff}
+
+/* appearance 2-col + modified-dot label */
+.apcol{min-width:0}
+.lbl.moddot{display:flex;align-items:center;gap:6px;color:#5CC8FF}
+.lbl.moddot::before{content:"";width:5px;height:5px;border-radius:50%;background:#0D99FF}
 
 /* segmented */
 .seg{display:flex;background:#383838;border-radius:6px;padding:2px;gap:2px}
@@ -129,13 +143,15 @@ export const PANEL_CSS = `
 /* empty addable section */
 .addrow{color:#7A7A7A;font-size:11px;padding:2px 0}
 
-/* ---- footer: "N changes" above, Reset + Copy inline below ---- */
-.foot{position:sticky;bottom:0;background:#262626;border-top:1px solid #1B1B1B;padding:9px 12px;
-  display:flex;flex-direction:column;gap:8px}
-.foot .count{font-size:11px;color:#9C9C9C;display:flex;align-items:center;gap:6px;cursor:pointer}
+/* ---- footer: always pinned at the bottom of the sidebar ---- */
+.foot{flex:none;background:#262626;border-top:1px solid #1B1B1B;padding:4px 12px 10px;
+  display:flex;flex-direction:column;gap:6px}
+.foot .count{font-size:11px;color:#9C9C9C;display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 0}
 .foot .count::before{content:"";width:6px;height:6px;border-radius:50%;background:#0D99FF;flex:none}
 .foot .count.zero{cursor:default}.foot .count.zero::before{background:#5A5A5A}
 .foot .count:hover{color:#fff}
+.foot .count-chev{margin-left:auto;color:#8C8C8C;font-size:11px}
+.foot .count:hover .count-chev{color:#fff}
 .foot-btns{display:flex;gap:8px}
 .foot-btns .rs{flex:none;height:30px;background:#383838;color:#D4D4D4;border:none;border-radius:6px;padding:0 12px;cursor:pointer;font-size:11px;white-space:nowrap}
 .foot-btns .rs:hover{background:#4A4A4A}
